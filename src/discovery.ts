@@ -1,28 +1,13 @@
 import { existsSync } from "node:fs";
 import { readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
-import { getComponentTargetName } from "./types";
 import type { ComponentType, DiscoveredComponent } from "./types";
+import { getComponentTargetName } from "./types";
 
 const SEARCH_PATHS: Record<ComponentType, string[]> = {
-  command: [
-    ".opencode/command",
-    ".claude/commands",
-    "command",
-    "commands",
-  ],
-  agent: [
-    ".opencode/agent",
-    ".claude/agents",
-    "agent",
-    "agents",
-  ],
-  skill: [
-    ".opencode/skill",
-    ".claude/skills",
-    "skill",
-    "skills",
-  ],
+  command: [".opencode/command", ".claude/commands", "command", "commands"],
+  agent: [".opencode/agent", ".claude/agents", "agent", "agents"],
+  skill: [".opencode/skill", ".claude/skills", "skill", "skills"],
 };
 
 /**
@@ -56,7 +41,7 @@ async function discoverType(
   // Find the first path that exists
   for (const relativePath of paths) {
     const fullPath = join(root, relativePath);
-    
+
     if (existsSync(fullPath)) {
       await scanDirectory(fullPath, pluginName, type, results);
       return; // Stop after first match (priority wins)
@@ -102,7 +87,7 @@ async function scanDirectory(
         }
       }
     }
-  } catch (error) {
+  } catch (_error) {
     // Ignore errors (e.g. permission denied) to be robust
     // In a real app we might want to log this in verbose mode
   }
