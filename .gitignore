@@ -24,11 +24,11 @@ node_modules/
 # OS specific
 .DS_Store
 
-# Build artifacts
-opencode
-opencode.exe
-opencode-marketplace
-opencode-marketplace.exe
+# Build artifacts (root level only)
+/opencode
+/opencode.exe
+/opencode-marketplace
+/opencode-marketplace.exe
 
 # Taskmaster files
 .taskmaster/
