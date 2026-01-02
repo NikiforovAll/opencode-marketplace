@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
-import { basename, join } from "node:path";
+import { join } from "node:path";
 import { type DiscoveredComponent, validatePluginName } from "./types";
 
 /**
@@ -8,7 +8,10 @@ import { type DiscoveredComponent, validatePluginName } from "./types";
  * Normalizes the name to be lowercase and validates it.
  */
 export function resolvePluginName(pluginPath: string): string {
-  const name = basename(pluginPath).toLowerCase();
+  // Extract the last part of the path, handling both Windows and POSIX separators
+  const parts = pluginPath.split(/[\\/]/);
+  const lastPart = parts.filter(Boolean).pop() || "";
+  const name = lastPart.toLowerCase();
 
   if (!validatePluginName(name)) {
     throw new Error(

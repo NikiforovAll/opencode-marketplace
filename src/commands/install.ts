@@ -108,7 +108,10 @@ export async function install(path: string, options: InstallOptions) {
       skills: [] as string[],
     };
 
-    for (const component of components) {
+    // Sort components by name to ensure deterministic installation order and registry entry
+    const sortedComponents = [...components].sort((a, b) => a.name.localeCompare(b.name));
+
+    for (const component of sortedComponents) {
       const targetPath = getComponentTargetPath(pluginName, component.name, component.type, scope);
 
       // Remove trailing slash for copying

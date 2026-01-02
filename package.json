@@ -3,6 +3,23 @@
   "version": "0.1.0",
   "description": "CLI marketplace for OpenCode plugins",
   "type": "module",
+  "author": "nikiforovall",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nikiforovall/opencode-marketplace"
+  },
+  "keywords": [
+    "opencode",
+    "mcp",
+    "marketplace",
+    "cli",
+    "plugins"
+  ],
+  "files": [
+    "bin",
+    "src"
+  ],
   "bin": {
     "opencode": "./bin/opencode.ts"
   },

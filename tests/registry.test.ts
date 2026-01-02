@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, mock, test } from "bun:test";
 import { mkdir, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   getAllInstalledPlugins,
@@ -10,8 +11,11 @@ import {
 } from "../src/registry";
 import type { InstalledPlugin, PluginRegistry } from "../src/types";
 
-// Setup a temp directory for tests
-const testTmpDir = join(process.cwd(), "tests", "tmp-registry");
+// Setup a unique temp directory for each test run to avoid interference
+const testTmpDir = join(
+  tmpdir(),
+  `opencode-registry-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+);
 
 // Mock homedir to point to our test directory
 mock.module("node:os", () => ({
