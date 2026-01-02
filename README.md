@@ -61,7 +61,7 @@ my-plugin/
 └── skill/          # or .opencode/skill/, .claude/skills/
     └── code-review/
         ├── SKILL.md
-        └── data.json
+        └── reference.md
 ```
 
 **Discovery Priority:** `.opencode/*` → `.claude/*` → `./command/` → `./commands/`
@@ -111,17 +111,6 @@ bun test             # Run tests
 bun run lint         # Lint code
 ```
 
-## Tech Stack
-
-- **Runtime**: Bun
-- **Language**: TypeScript
-- **CLI**: CAC
-- **Testing**: Bun test runner
-
 ## License
 
 MIT
-
-## Contributing
-
-Contributions welcome! Open an issue or PR on [GitHub](https://github.com/NikiforovAll/opencode-marketplace).
