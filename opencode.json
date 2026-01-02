@@ -2,9 +2,11 @@
   "$schema": "https://opencode.ai/config.json",
   "permission": {
     "bash": {
-      "but add": "allow",
-      "but run": "allow",
-      "but test": "allow"
+      "git status": "allow",
+      "git log": "allow",
+      "git diff": "allow",
+      "bun run": "allow",
+      "bun test": "allow"
     }
   },
   "mcp": {
