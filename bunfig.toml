@@ -1,0 +1,11 @@
+[runtime]
+# Enable TypeScript support
+loader = { ".ts" = "ts" }
+
+[test]
+# Configure test runner
+runner = "bun"
+
+[install]
+# optimize install
+production = false

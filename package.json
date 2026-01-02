@@ -1,0 +1,32 @@
+{
+  "name": "opencode-marketplace",
+  "version": "0.1.0",
+  "description": "CLI marketplace for OpenCode plugins",
+  "type": "module",
+  "bin": {
+    "opencode": "./bin/opencode.ts"
+  },
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "build": "bun build ./src/index.ts --compile --outfile opencode-marketplace",
+    "test": "bun test",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format .",
+    "format:fix": "biome format --write .",
+    "typecheck": "tsc --noEmit",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.3.10",
+    "@types/bun": "latest",
+    "husky": "^9.1.7",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "cac": "^6.7.14"
+  }
+}
