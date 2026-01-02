@@ -1,18 +1,15 @@
 # OpenCode Marketplace
 
-CLI marketplace for OpenCode plugins - declarative, file-based plugin distribution for commands, agents, and skills.
+CLI for installing OpenCode plugins from local directories or GitHub repositories.
 
-## Overview
+## Features
 
-OpenCode Marketplace brings a convention-based plugin system to OpenCode. Instead of npm packages with programmatic hooks, plugins are simply directories with well-known folder structures that get auto-discovered and installed.
-
-**Key Features:**
-- 📦 Install plugins from local directories
-- 🎯 Zero-config, convention-based discovery
-- 🔄 Content-hash based change detection (no version numbers)
-- 🎭 Support for commands, agents, and skills
-- 🌍 User-global or project-local scope
-- 🧹 Clean install/uninstall workflows
+- 📦 Install from **local directories** or **GitHub URLs**
+- 🔄 **Update** remote plugins with one command
+- 🎯 **Zero-config** convention-based discovery
+- 🔐 **Content-hash** based change detection
+- 🎭 Support for **commands**, **agents**, and **skills**
+- 🌍 **User-global** or **project-local** scope
 
 ## Installation
 
@@ -28,91 +25,71 @@ bun install -g opencode-marketplace
 
 ## Quick Start
 
-### Install a Plugin
-
 ```bash
+# Install from local directory
 opencode-marketplace install /path/to/my-plugin
-```
 
-### List Installed Plugins
+# Install from GitHub
+opencode-marketplace install https://github.com/user/repo
 
-```bash
+# Install from subfolder
+opencode-marketplace install https://github.com/user/repo/tree/main/plugins/foo
+
+# Update a remote plugin
+opencode-marketplace update my-plugin
+
+# List installed plugins
 opencode-marketplace list
-```
 
-### Scan a Plugin (Dry Run)
+# Scan before installing (dry-run)
+opencode-marketplace scan https://github.com/user/repo
 
-```bash
-opencode-marketplace scan /path/to/my-plugin
-```
-
-### Uninstall a Plugin
-
-```bash
+# Uninstall
 opencode-marketplace uninstall my-plugin
 ```
 
 ## Plugin Structure
 
-A plugin is a directory containing components in well-known locations:
+A plugin is a directory with components in well-known locations:
 
 ```
 my-plugin/
-├── command/           # or .opencode/command/, .claude/commands/
+├── command/         # or .opencode/command/, .claude/commands/
 │   └── reflect.md
-├── agent/            # or .opencode/agent/, .claude/agents/
+├── agent/          # or .opencode/agent/, .claude/agents/
 │   └── reviewer.md
-└── skill/            # or .opencode/skill/, .claude/skills/
+└── skill/          # or .opencode/skill/, .claude/skills/
     └── code-review/
         ├── SKILL.md
         └── data.json
 ```
 
-### Discovery Priority
-
-The tool searches for components in this order (first match wins):
-
-| Component | Priority 1 | Priority 2 | Priority 3 | Priority 4 |
-|-----------|------------|------------|------------|------------|
-| Commands | `.opencode/command/` | `.claude/commands/` | `./command/` | `./commands/` |
-| Agents | `.opencode/agent/` | `.claude/agents/` | `./agent/` | `./agents/` |
-| Skills | `.opencode/skill/` | `.claude/skills/` | `./skill/` | `./skills/` |
+**Discovery Priority:** `.opencode/*` → `.claude/*` → `./command/` → `./commands/`
 
 ## How It Works
 
-### 1. Discovery
-The tool scans your plugin directory for components using convention-based paths.
-
-### 2. Namespacing
-Files are copied with a prefix to avoid conflicts:
-- Source: `my-plugin/command/reflect.md`
-- Target: `~/.config/opencode/command/my-plugin--reflect.md`
-
-### 3. Registry
-Installed plugins are tracked in `~/.config/opencode/plugins/installed.json` with:
-- Content hash (instead of version)
-- Source path
-- Installed components
-- Scope (user/project)
-
-### 4. Change Detection
-Content hashing ensures you only reinstall when files actually change.
+1. **Discovery** - Scans for components using convention-based paths
+2. **Namespacing** - Copies files with prefixes: `my-plugin--reflect.md`
+3. **Registry** - Tracks installations in `~/.config/opencode/plugins/installed.json`
+4. **Change Detection** - Content hashing detects actual changes
 
 ## Scopes
 
-| Scope | Target Location | Registry |
-|-------|----------------|----------|
+| Scope | Target | Registry |
+|-------|--------|----------|
 | `user` (default) | `~/.config/opencode/` | `~/.config/opencode/plugins/installed.json` |
 | `project` | `.opencode/` | `.opencode/plugins/installed.json` |
 
-## Example
+Use `--scope project` for project-local installations.
+
+## Example Output
 
 ```bash
-$ opencode-marketplace install ~/plugins/misc
+$ opencode-marketplace install https://github.com/user/awesome-plugins/tree/main/misc
 
 Installing misc [a1b2c3d4]...
   → command/misc--reflect.md
-  → skill/misc--git-review/
+  → skill/misc--review/
 
 Installed misc (1 command, 1 skill) to user scope.
 ```
@@ -120,57 +97,26 @@ Installed misc (1 command, 1 skill) to user scope.
 ```bash
 $ opencode-marketplace list
 
-Installed plugins (user scope):
+User scope:
   misc [a1b2c3d4] (1 command, 1 skill)
-    Source: /home/user/plugins/misc
+    Source: https://github.com/user/awesome-plugins/tree/main/misc
 ```
 
 ## Development
 
-### Setup
-
 ```bash
-bun install
-```
-
-### Run Locally
-
-```bash
-bun run dev
-```
-
-### Test
-
-```bash
-bun test
-```
-
-### Lint & Format
-
-```bash
-bun run lint
-bun run format
+bun install          # Install dependencies
+bun run dev          # Run locally
+bun test             # Run tests
+bun run lint         # Lint code
 ```
 
 ## Tech Stack
 
 - **Runtime**: Bun
 - **Language**: TypeScript
-- **CLI Framework**: CAC
-- **Testing**: Bun's built-in test runner
-
-## Roadmap
-
-**v1** (Current):
-- ✅ Local directory installation
-- ✅ Commands, agents, and skills support
-- ✅ User/project scope
-- ✅ Content-hash based updates
-
-**Future**:
-- Remote installation (GitHub URLs)
-- Plugin dependencies
-- Marketplace browsing
+- **CLI**: CAC
+- **Testing**: Bun test runner
 
 ## License
 
@@ -178,4 +124,4 @@ MIT
 
 ## Contributing
 
-Contributions welcome! Please open an issue or PR on [GitHub](https://github.com/NikiforovAll/opencode-marketplace).
+Contributions welcome! Open an issue or PR on [GitHub](https://github.com/NikiforovAll/opencode-marketplace).

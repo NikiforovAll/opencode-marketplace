@@ -16,11 +16,18 @@ export interface DiscoveredComponent {
   targetName: string; // prefixed name
 }
 
+/**
+ * Source of a plugin - either local path or remote URL
+ */
+export type PluginSource =
+  | { type: "local"; path: string }
+  | { type: "remote"; url: string; ref?: string };
+
 export interface InstalledPlugin {
   name: string;
   hash: string;
   scope: Scope;
-  sourcePath: string;
+  source: PluginSource;
   installedAt: string; // ISO 8601 timestamp
   components: {
     commands: string[]; // list of installed filenames (prefixed)
@@ -30,7 +37,7 @@ export interface InstalledPlugin {
 }
 
 export interface PluginRegistry {
-  version: 1;
+  version: 1 | 2;
   plugins: Record<string, InstalledPlugin>;
 }
 

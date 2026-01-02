@@ -50,7 +50,7 @@ describe("Types & Helpers", () => {
         name: "test-plugin",
         hash: "abc123456",
         scope: "user",
-        sourcePath: "/tmp/source",
+        source: { type: "local", path: "/tmp/source" },
         installedAt: new Date().toISOString(),
         components: {
           commands: ["test-plugin--cmd1.ts"],

@@ -23,15 +23,23 @@ export async function loadRegistry(scope: Scope): Promise<PluginRegistry> {
   const path = getRegistryPath(scope);
 
   if (!existsSync(path)) {
-    return { version: 1, plugins: {} };
+    return { version: 2, plugins: {} };
   }
 
   try {
     const content = await readFile(path, "utf-8");
-    return JSON.parse(content);
+    const registry = JSON.parse(content);
+
+    // If old v1 registry, warn and return empty
+    if (registry.version === 1) {
+      console.warn("Warning: Registry v1 detected. Please reinstall plugins for v2 compatibility.");
+      return { version: 2, plugins: {} };
+    }
+
+    return registry;
   } catch (error) {
     console.error(`Error loading registry from ${path}:`, error);
-    return { version: 1, plugins: {} };
+    return { version: 2, plugins: {} };
   }
 }
 

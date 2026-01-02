@@ -51,13 +51,13 @@ describe("list command", () => {
   it("should display single plugin in project scope", async () => {
     // Create test registry with one plugin
     const registry = {
-      version: 1 as const,
+      version: 2 as const,
       plugins: {
         "test-plugin": {
           name: "test-plugin",
           hash: "a1b2c3d4e5f6g7h8",
           scope: "project" as Scope,
-          sourcePath: "/path/to/plugin",
+          source: { type: "local", path: "/path/to/plugin" },
           installedAt: "2024-01-01T00:00:00.000Z",
           components: {
             commands: ["test-plugin--command.md"],
@@ -82,13 +82,13 @@ describe("list command", () => {
 
   it("should display multiple plugins sorted alphabetically", async () => {
     const registry = {
-      version: 1 as const,
+      version: 2 as const,
       plugins: {
         "zebra-plugin": {
           name: "zebra-plugin",
           hash: "z1b2c3d4e5f6g7h8",
           scope: "user" as Scope,
-          sourcePath: "/path/to/zebra",
+          source: { type: "local", path: "/path/to/zebra" },
           installedAt: "2024-01-01T00:00:00.000Z",
           components: {
             commands: ["zebra-plugin--command.md"],
@@ -100,7 +100,7 @@ describe("list command", () => {
           name: "alpha-plugin",
           hash: "a1b2c3d4e5f6g7h8",
           scope: "user" as Scope,
-          sourcePath: "/path/to/alpha",
+          source: { type: "local", path: "/path/to/alpha" },
           installedAt: "2024-01-02T00:00:00.000Z",
           components: {
             commands: [],
@@ -127,13 +127,13 @@ describe("list command", () => {
 
   it("should filter by user scope", async () => {
     const userRegistry = {
-      version: 1 as const,
+      version: 2 as const,
       plugins: {
         "user-plugin": {
           name: "user-plugin",
           hash: "u1b2c3d4e5f6g7h8",
           scope: "user" as Scope,
-          sourcePath: "/path/to/user",
+          source: { type: "local", path: "/path/to/user" },
           installedAt: "2024-01-01T00:00:00.000Z",
           components: {
             commands: ["user-plugin--command.md"],
@@ -145,13 +145,13 @@ describe("list command", () => {
     };
 
     const projectRegistry = {
-      version: 1 as const,
+      version: 2 as const,
       plugins: {
         "project-plugin": {
           name: "project-plugin",
           hash: "p1b2c3d4e5f6g7h8",
           scope: "project" as Scope,
-          sourcePath: "/path/to/project",
+          source: { type: "local", path: "/path/to/project" },
           installedAt: "2024-01-01T00:00:00.000Z",
           components: {
             commands: ["project-plugin--command.md"],
@@ -177,13 +177,13 @@ describe("list command", () => {
 
   it("should filter by project scope", async () => {
     const userRegistry = {
-      version: 1 as const,
+      version: 2 as const,
       plugins: {
         "user-plugin": {
           name: "user-plugin",
           hash: "u1b2c3d4e5f6g7h8",
           scope: "user" as Scope,
-          sourcePath: "/path/to/user",
+          source: { type: "local", path: "/path/to/user" },
           installedAt: "2024-01-01T00:00:00.000Z",
           components: {
             commands: ["user-plugin--command.md"],
@@ -195,13 +195,13 @@ describe("list command", () => {
     };
 
     const projectRegistry = {
-      version: 1 as const,
+      version: 2 as const,
       plugins: {
         "project-plugin": {
           name: "project-plugin",
           hash: "p1b2c3d4e5f6g7h8",
           scope: "project" as Scope,
-          sourcePath: "/path/to/project",
+          source: { type: "local", path: "/path/to/project" },
           installedAt: "2024-01-01T00:00:00.000Z",
           components: {
             commands: ["project-plugin--command.md"],
@@ -227,13 +227,13 @@ describe("list command", () => {
 
   it("should display plugins with mixed component types", async () => {
     const registry = {
-      version: 1 as const,
+      version: 2 as const,
       plugins: {
         "mixed-plugin": {
           name: "mixed-plugin",
           hash: "m1b2c3d4e5f6g7h8",
           scope: "project" as Scope,
-          sourcePath: "/path/to/mixed",
+          source: { type: "local", path: "/path/to/mixed" },
           installedAt: "2024-01-01T00:00:00.000Z",
           components: {
             commands: ["mixed-plugin--cmd1.md", "mixed-plugin--cmd2.md"],
@@ -258,13 +258,13 @@ describe("list command", () => {
 
   it("should show verbose output", async () => {
     const registry = {
-      version: 1 as const,
+      version: 2 as const,
       plugins: {
         "verbose-plugin": {
           name: "verbose-plugin",
           hash: "v1b2c3d4e5f6g7h8",
           scope: "user" as Scope,
-          sourcePath: "/path/to/verbose",
+          source: { type: "local", path: "/path/to/verbose" },
           installedAt: "2024-01-01T12:30:45.000Z",
           components: {
             commands: ["verbose-plugin--cmd.md"],
@@ -295,13 +295,13 @@ describe("list command", () => {
 
   it("should show both scopes with proper spacing", async () => {
     const userRegistry = {
-      version: 1 as const,
+      version: 2 as const,
       plugins: {
         "user-plugin": {
           name: "user-plugin",
           hash: "u1b2c3d4e5f6g7h8",
           scope: "user" as Scope,
-          sourcePath: "/path/to/user",
+          source: { type: "local", path: "/path/to/user" },
           installedAt: "2024-01-01T00:00:00.000Z",
           components: {
             commands: ["user-plugin--command.md"],
@@ -313,13 +313,13 @@ describe("list command", () => {
     };
 
     const projectRegistry = {
-      version: 1 as const,
+      version: 2 as const,
       plugins: {
         "project-plugin": {
           name: "project-plugin",
           hash: "p1b2c3d4e5f6g7h8",
           scope: "project" as Scope,
-          sourcePath: "/path/to/project",
+          source: { type: "local", path: "/path/to/project" },
           installedAt: "2024-01-01T00:00:00.000Z",
           components: {
             commands: ["project-plugin--command.md"],

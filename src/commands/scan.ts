@@ -1,8 +1,11 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { discoverComponents } from "../discovery";
+import { cleanup, cloneToTemp } from "../git";
+import { isGitHubUrl, parseGitHubUrl } from "../github";
 import { computePluginHash, resolvePluginName } from "../identity";
 import type { DiscoveredComponent } from "../types";
+import { validatePluginName } from "../types";
 
 export interface ScanOptions {
   verbose?: boolean;
@@ -13,77 +16,129 @@ export interface ScanOptions {
  * This is a dry-run operation that doesn't modify any files.
  */
 export async function scan(path: string, options: ScanOptions): Promise<void> {
-  // 1. Validate and resolve path
-  const absolutePath = resolve(path);
+  let tempDir: string | null = null;
 
-  if (options.verbose) {
-    console.log(`[VERBOSE] Scanning path ${absolutePath}`);
-  }
-
-  if (!existsSync(absolutePath)) {
-    console.error(`Error: Directory not found: ${path}`);
-    process.exit(1);
-  }
-
-  // 2. Resolve plugin identity
-  let pluginName: string;
   try {
-    pluginName = resolvePluginName(absolutePath);
-    if (options.verbose) {
-      console.log(`[VERBOSE] Resolved plugin name: ${pluginName}`);
+    // 1. Detect if path is a GitHub URL or local path
+    let absolutePath: string;
+
+    if (isGitHubUrl(path)) {
+      // Remote scan
+      const parsed = parseGitHubUrl(path);
+      if (!parsed) {
+        console.error(`Error: Invalid GitHub URL: ${path}`);
+        process.exit(1);
+      }
+
+      if (options.verbose) {
+        console.log(
+          `[VERBOSE] Cloning from GitHub: ${parsed.owner}/${parsed.repo}${parsed.ref ? `@${parsed.ref}` : ""}`,
+        );
+      }
+
+      // Clone repository - use base URL without /tree/ path
+      const repoUrl = `https://github.com/${parsed.owner}/${parsed.repo}.git`;
+      const cloneResult = await cloneToTemp(repoUrl, parsed.ref, parsed.subpath);
+      tempDir = cloneResult.tempDir;
+      absolutePath = cloneResult.pluginPath;
+    } else {
+      // Local scan
+      absolutePath = resolve(path);
+
+      if (options.verbose) {
+        console.log(`[VERBOSE] Scanning path ${absolutePath}`);
+      }
+
+      if (!existsSync(absolutePath)) {
+        console.error(`Error: Directory not found: ${path}`);
+        process.exit(1);
+      }
     }
-  } catch (error) {
-    console.error(error instanceof Error ? error.message : String(error));
-    process.exit(1);
-  }
 
-  // 3. Discover components
-  const components = await discoverComponents(absolutePath, pluginName);
+    // 2. Resolve plugin identity
+    let pluginName: string;
+    try {
+      // For remote scans, derive name from URL instead of temp directory
+      if (isGitHubUrl(path)) {
+        const parsed = parseGitHubUrl(path);
+        if (!parsed) {
+          throw new Error(`Invalid GitHub URL: ${path}`);
+        }
+        // Use subpath if present (e.g., "foo" from "plugins/foo"), otherwise use repo name
+        const lastPathPart = parsed.subpath?.split("/").filter(Boolean).pop();
+        pluginName = (lastPathPart || parsed.repo).toLowerCase();
 
-  // 4. Compute and shorten hash
-  let hash = "";
-  try {
-    const fullHash = await computePluginHash(components);
-    hash = shortenHash(fullHash);
+        // Validate the derived name
+        if (!validatePluginName(pluginName)) {
+          throw new Error(
+            `Invalid plugin name "${pluginName}" derived from URL. Plugin names must be lowercase alphanumeric with hyphens.`,
+          );
+        }
+      } else {
+        pluginName = resolvePluginName(absolutePath);
+      }
 
-    if (options.verbose) {
-      console.log(`[VERBOSE] Computed hash: ${fullHash} (shortened to ${hash})`);
+      if (options.verbose) {
+        console.log(`[VERBOSE] Resolved plugin name: ${pluginName}`);
+      }
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+
+    // 3. Discover components
+    const components = await discoverComponents(absolutePath, pluginName);
+
+    // 4. Compute and shorten hash
+    let hash = "";
+    try {
+      const fullHash = await computePluginHash(components);
+      hash = shortenHash(fullHash);
+
+      if (options.verbose) {
+        console.log(`[VERBOSE] Computed hash: ${fullHash} (shortened to ${hash})`);
+        console.log();
+      }
+    } catch (error) {
+      // Partial results with warning (per design decision #3)
+      console.warn(
+        `Warning: Failed to compute hash: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      hash = "????????"; // Placeholder for failed hash
+    }
+
+    // 5. Display results
+    console.log(`Scanning ${pluginName} [${hash}]...`);
+
+    if (components.length === 0) {
       console.log();
+      console.log("No components found.");
+      console.log();
+      console.log("Expected directories:");
+      console.log("  - .opencode/command/, .claude/commands/, command/, or commands/");
+      console.log("  - .opencode/agent/, .claude/agents/, agent/, or agents/");
+      console.log("  - .opencode/skill/, .claude/skills/, skill/, or skills/");
+      return;
     }
-  } catch (error) {
-    // Partial results with warning (per design decision #3)
-    console.warn(
-      `Warning: Failed to compute hash: ${error instanceof Error ? error.message : String(error)}`,
-    );
-    hash = "????????"; // Placeholder for failed hash
-  }
 
-  // 5. Display results
-  console.log(`Scanning ${pluginName} [${hash}]...`);
+    // Display components (matching install output format)
+    for (const component of components) {
+      const suffix = component.type === "skill" ? "/" : "";
+      console.log(`  → ${component.type}/${component.targetName}${suffix}`);
+    }
 
-  if (components.length === 0) {
     console.log();
-    console.log("No components found.");
-    console.log();
-    console.log("Expected directories:");
-    console.log("  - .opencode/command/, .claude/commands/, command/, or commands/");
-    console.log("  - .opencode/agent/, .claude/agents/, agent/, or agents/");
-    console.log("  - .opencode/skill/, .claude/skills/, skill/, or skills/");
-    return;
+
+    // Display summary
+    const counts = countComponentsByType(components);
+    const summary = formatComponentCount(counts);
+    console.log(`Found ${summary}`);
+  } finally {
+    // Cleanup temp directory if remote scan
+    if (tempDir) {
+      await cleanup(tempDir);
+    }
   }
-
-  // Display components (matching install output format)
-  for (const component of components) {
-    const suffix = component.type === "skill" ? "/" : "";
-    console.log(`  → ${component.type}/${component.targetName}${suffix}`);
-  }
-
-  console.log();
-
-  // Display summary
-  const counts = countComponentsByType(components);
-  const summary = formatComponentCount(counts);
-  console.log(`Found ${summary}`);
 }
 
 /**

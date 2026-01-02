@@ -3,10 +3,19 @@ import { copyFile, cp, mkdir } from "node:fs/promises";
 import { basename, dirname, resolve } from "node:path";
 import { discoverComponents } from "../discovery";
 import { formatComponentCount } from "../format";
+import { cleanup, cloneToTemp } from "../git";
+import { isGitHubUrl, parseGitHubUrl } from "../github";
 import { computePluginHash, resolvePluginName } from "../identity";
 import { ensureComponentDirsExist, getComponentTargetPath } from "../paths";
 import { getInstalledPlugin, loadRegistry, saveRegistry } from "../registry";
-import type { ComponentType, DiscoveredComponent, InstalledPlugin, Scope } from "../types";
+import type {
+  ComponentType,
+  DiscoveredComponent,
+  InstalledPlugin,
+  PluginSource,
+  Scope,
+} from "../types";
+import { validatePluginName } from "../types";
 
 export interface InstallOptions {
   scope: "user" | "project";
@@ -23,15 +32,74 @@ interface ConflictInfo {
 export async function install(path: string, options: InstallOptions) {
   const { scope, force, verbose } = options;
 
+  let tempDir: string | null = null;
+  let pluginSource: PluginSource;
+
   try {
-    // Step 1: Validate plugin directory exists
-    const pluginPath = resolve(path);
-    if (!existsSync(pluginPath)) {
-      throw new Error(`Plugin directory not found: ${path}`);
+    // Step 1: Detect if path is a GitHub URL or local path
+    let pluginPath: string;
+
+    if (isGitHubUrl(path)) {
+      // Remote installation
+      const parsed = parseGitHubUrl(path);
+      if (!parsed) {
+        throw new Error(`Invalid GitHub URL: ${path}`);
+      }
+
+      if (verbose) {
+        console.log(
+          `[VERBOSE] Cloning from GitHub: ${parsed.owner}/${parsed.repo}${parsed.ref ? `@${parsed.ref}` : ""}`,
+        );
+      }
+
+      // Clone repository - use base URL without /tree/ path
+      const repoUrl = `https://github.com/${parsed.owner}/${parsed.repo}.git`;
+      const cloneResult = await cloneToTemp(repoUrl, parsed.ref, parsed.subpath);
+      tempDir = cloneResult.tempDir;
+
+      // Plugin path from clone result
+      pluginPath = cloneResult.pluginPath;
+
+      pluginSource = {
+        type: "remote",
+        url: path,
+        ref: parsed.ref,
+      };
+    } else {
+      // Local installation
+      pluginPath = resolve(path);
+      if (!existsSync(pluginPath)) {
+        throw new Error(`Plugin directory not found: ${path}`);
+      }
+
+      pluginSource = {
+        type: "local",
+        path: pluginPath,
+      };
     }
 
     // Step 2: Resolve plugin identity
-    const pluginName = resolvePluginName(pluginPath);
+    // For remote installations, derive name from URL instead of temp directory
+    let pluginName: string;
+    if (pluginSource.type === "remote") {
+      const parsed = parseGitHubUrl(path);
+      if (!parsed) {
+        throw new Error(`Invalid GitHub URL: ${path}`);
+      }
+      // Use subpath if present (e.g., "foo" from "plugins/foo"), otherwise use repo name
+      const lastPathPart = parsed.subpath?.split("/").filter(Boolean).pop();
+      pluginName = (lastPathPart || parsed.repo).toLowerCase();
+
+      // Validate the derived name
+      if (!validatePluginName(pluginName)) {
+        throw new Error(
+          `Invalid plugin name "${pluginName}" derived from URL. Plugin names must be lowercase alphanumeric with hyphens.`,
+        );
+      }
+    } else {
+      pluginName = resolvePluginName(pluginPath);
+    }
+
     if (verbose) {
       console.log(`[VERBOSE] Resolved plugin name: ${pluginName}`);
     }
@@ -144,7 +212,7 @@ export async function install(path: string, options: InstallOptions) {
       name: pluginName,
       hash: pluginHash,
       scope,
-      sourcePath: pluginPath,
+      source: pluginSource,
       installedAt: new Date().toISOString(),
       components: installedComponents,
     };
@@ -152,10 +220,20 @@ export async function install(path: string, options: InstallOptions) {
     registry.plugins[pluginName] = newPlugin;
     await saveRegistry(registry, scope);
 
-    // Step 10: Print success message
+    // Step 10: Cleanup temp directory if remote installation
+    if (tempDir) {
+      await cleanup(tempDir);
+    }
+
+    // Step 11: Print success message
     const componentCounts = formatComponentCount(installedComponents);
     console.log(`\nInstalled ${pluginName} (${componentCounts}) to ${scope} scope.`);
   } catch (error) {
+    // Cleanup temp directory on error
+    if (tempDir) {
+      await cleanup(tempDir);
+    }
+
     if (error instanceof Error) {
       console.error(`\nError: ${error.message}`);
     } else {

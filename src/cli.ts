@@ -4,12 +4,13 @@ import { install } from "./commands/install";
 import { list } from "./commands/list";
 import { scan } from "./commands/scan";
 import { uninstall } from "./commands/uninstall";
+import { update } from "./commands/update";
 
 export function run(argv = process.argv) {
   const cli = cac("opencode-marketplace");
 
   cli
-    .command("install <path>", "Install a plugin from a local directory")
+    .command("install <path>", "Install a plugin from a local directory or GitHub URL")
     .option("--scope <scope>", "Installation scope (user/project)", { default: "user" })
     .option("--force", "Overwrite existing components", { default: false })
     .action((path, options) => {
@@ -43,9 +44,20 @@ export function run(argv = process.argv) {
     });
 
   cli
-    .command("scan <path>", "Scan a directory for plugin components (dry-run)")
+    .command("scan <path>", "Scan a local directory or GitHub URL for plugin components (dry-run)")
     .action((path, options) => {
       return scan(path, options);
+    });
+
+  cli
+    .command("update <name>", "Update a plugin from its remote source")
+    .option("--scope <scope>", "Installation scope (user/project)", { default: "user" })
+    .action((name, options) => {
+      if (options.scope !== "user" && options.scope !== "project") {
+        console.error(`Invalid scope: ${options.scope}. Must be 'user' or 'project'.`);
+        process.exit(1);
+      }
+      return update(name, options);
     });
 
   // Global options

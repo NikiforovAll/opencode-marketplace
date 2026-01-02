@@ -57,7 +57,10 @@ function displayPlugin(plugin: InstalledPlugin, verbose = false) {
   const shortHash = plugin.hash.substring(0, 8);
 
   console.log(`  ${plugin.name} [${shortHash}] (${componentCount})`);
-  console.log(`    Source: ${plugin.sourcePath}`);
+
+  // Display source based on type
+  const sourceText = plugin.source.type === "remote" ? plugin.source.url : plugin.source.path;
+  console.log(`    Source: ${sourceText}`);
 
   if (verbose) {
     console.log(`    Installed: ${plugin.installedAt}`);

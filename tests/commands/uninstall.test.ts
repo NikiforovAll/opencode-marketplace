@@ -436,7 +436,7 @@ describe("Uninstall Command", () => {
       name: "empty-plugin",
       hash: "abcd1234",
       scope: "project",
-      sourcePath: "/fake/path",
+      source: { type: "local", path: "/fake/path" },
       installedAt: new Date().toISOString(),
       components: {
         commands: [],

@@ -47,7 +47,7 @@ describe("Registry", () => {
 
   test("loadRegistry should return empty registry if file missing", async () => {
     const registry = await loadRegistry("user");
-    expect(registry.version).toBe(1);
+    expect(registry.version).toBe(2);
     expect(registry.plugins).toEqual({});
   });
 
@@ -56,7 +56,7 @@ describe("Registry", () => {
       name: "test-plugin",
       hash: "123456",
       scope: "user",
-      sourcePath: "/path/to/source",
+      source: { type: "local", path: "/path/to/source" },
       installedAt: new Date().toISOString(),
       components: {
         commands: [],
@@ -66,7 +66,7 @@ describe("Registry", () => {
     };
 
     const registry: PluginRegistry = {
-      version: 1,
+      version: 2,
       plugins: {
         "test-plugin": mockPlugin,
       },
@@ -95,7 +95,7 @@ describe("Registry", () => {
       name: "project-plugin",
       hash: "abcdef",
       scope: "project",
-      sourcePath: "/path/to/proj/source",
+      source: { type: "local", path: "/path/to/proj/source" },
       installedAt: new Date().toISOString(),
       components: {
         commands: [],
@@ -105,7 +105,7 @@ describe("Registry", () => {
     };
 
     const projectRegistry: PluginRegistry = {
-      version: 1,
+      version: 2,
       plugins: {
         "project-plugin": projectPlugin,
       },
