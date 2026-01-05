@@ -13,6 +13,7 @@ export function run(argv = process.argv) {
     .command("install <path>", "Install a plugin from a local directory or GitHub URL")
     .option("--scope <scope>", "Installation scope (user/project)", { default: "user" })
     .option("--force", "Overwrite existing components", { default: false })
+    .option("-i, --interactive", "Interactively select components to install", { default: false })
     .action((path, options) => {
       if (options.scope !== "user" && options.scope !== "project") {
         console.error(`Invalid scope: ${options.scope}. Must be 'user' or 'project'.`);

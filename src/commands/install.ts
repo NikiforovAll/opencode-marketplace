@@ -20,6 +20,7 @@ export interface InstallOptions {
   scope: "user" | "project";
   force: boolean;
   verbose?: boolean;
+  interactive?: boolean;
 }
 
 interface ConflictInfo {
@@ -29,7 +30,7 @@ interface ConflictInfo {
 }
 
 export async function install(path: string, options: InstallOptions) {
-  const { scope, force, verbose } = options;
+  const { scope, force, verbose, interactive } = options;
 
   let tempDir: string | null = null;
   let pluginSource: PluginSource;
@@ -95,6 +96,44 @@ export async function install(path: string, options: InstallOptions) {
       );
     }
 
+    // Step 3.5: Interactive selection (if enabled)
+    let componentsToInstall = components;
+
+    if (interactive) {
+      const { selectComponents } = await import("../interactive");
+
+      try {
+        const result = await selectComponents(pluginName, components);
+
+        if (result.cancelled) {
+          console.log("\nInstallation cancelled.");
+          if (tempDir) {
+            await cleanup(tempDir);
+          }
+          return;
+        }
+
+        if (result.selected.length === 0) {
+          console.log("No components selected. Nothing installed.");
+          if (tempDir) {
+            await cleanup(tempDir);
+          }
+          return;
+        }
+
+        componentsToInstall = result.selected;
+      } catch (error) {
+        if (error instanceof Error && error.message.includes("User force closed")) {
+          console.log("\nInstallation cancelled.");
+          if (tempDir) {
+            await cleanup(tempDir);
+          }
+          return;
+        }
+        throw error;
+      }
+    }
+
     // Step 4: Compute plugin hash
     const pluginHash = await computePluginHash(components);
     const shortHash = pluginHash.substring(0, 8);
@@ -102,6 +141,11 @@ export async function install(path: string, options: InstallOptions) {
     if (verbose) {
       console.log(`[VERBOSE] Plugin hash: ${pluginHash}`);
       console.log(`[VERBOSE] Found ${components.length} component(s)`);
+      if (interactive && componentsToInstall.length < components.length) {
+        console.log(
+          `[VERBOSE] Selected ${componentsToInstall.length} component(s) for installation`,
+        );
+      }
     }
 
     console.log(`Installing ${pluginName} [${shortHash}]...`);
@@ -126,7 +170,7 @@ export async function install(path: string, options: InstallOptions) {
     }
 
     // Step 6: Detect conflicts
-    const conflicts = await detectConflicts(components, pluginName, scope);
+    const conflicts = await detectConflicts(componentsToInstall, pluginName, scope);
 
     if (conflicts.length > 0 && !force) {
       console.error("\nConflict detected:");
@@ -160,7 +204,7 @@ export async function install(path: string, options: InstallOptions) {
     };
 
     // Sort components by name to ensure deterministic installation order and registry entry
-    const sortedComponents = [...components].sort((a, b) => a.name.localeCompare(b.name));
+    const sortedComponents = [...componentsToInstall].sort((a, b) => a.name.localeCompare(b.name));
 
     for (const component of sortedComponents) {
       const targetPath = getComponentTargetPath(pluginName, component.name, component.type, scope);
