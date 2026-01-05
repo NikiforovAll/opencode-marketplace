@@ -1,7 +1,53 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { parseGitHubUrl } from "./github";
+import { readPluginManifest } from "./manifest";
 import { type DiscoveredComponent, validatePluginName } from "./types";
+
+/**
+ * Infers plugin name from multiple sources with priority:
+ * 1. plugin.json name field if present
+ * 2. Derived from GitHub URL (with dot-stripping)
+ * 3. Local directory name (with dot-stripping)
+ *
+ * @param pluginPath - Absolute path to plugin directory
+ * @param originalPath - Original path/URL provided by user (for remote sources)
+ * @returns Validated plugin name
+ */
+export async function inferPluginName(pluginPath: string, originalPath?: string): Promise<string> {
+  // Try reading plugin.json name field first
+  const manifest = await readPluginManifest(pluginPath);
+
+  if (manifest?.name) {
+    const name = manifest.name.toLowerCase();
+    if (!validatePluginName(name)) {
+      throw new Error(
+        `Invalid plugin name "${name}" in plugin.json. Plugin names must be lowercase alphanumeric with hyphens.`,
+      );
+    }
+    return name;
+  }
+
+  // For remote URLs, derive from URL with dot-stripping
+  if (originalPath?.startsWith("https://github.com/")) {
+    const parsed = parseGitHubUrl(originalPath);
+    if (parsed) {
+      const lastPathPart = parsed.subpath?.split("/").filter(Boolean).pop();
+      const name = (lastPathPart || parsed.repo).replace(/^\.+/, "").toLowerCase();
+
+      if (!validatePluginName(name)) {
+        throw new Error(
+          `Invalid plugin name "${name}" derived from URL. Plugin names must be lowercase alphanumeric with hyphens.`,
+        );
+      }
+      return name;
+    }
+  }
+
+  // Fallback to directory name
+  return resolvePluginName(pluginPath);
+}
 
 /**
  * Resolves the plugin name from the directory path.
@@ -11,7 +57,8 @@ export function resolvePluginName(pluginPath: string): string {
   // Extract the last part of the path, handling both Windows and POSIX separators
   const parts = pluginPath.split(/[\\/]/);
   const lastPart = parts.filter(Boolean).pop() || "";
-  const name = lastPart.toLowerCase();
+  // Strip leading dots (e.g., .claude-plugin -> claude-plugin)
+  const name = lastPart.replace(/^\.+/, "").toLowerCase();
 
   if (!validatePluginName(name)) {
     throw new Error(

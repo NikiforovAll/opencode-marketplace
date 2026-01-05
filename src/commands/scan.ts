@@ -3,9 +3,8 @@ import { resolve } from "node:path";
 import { discoverComponents } from "../discovery";
 import { cleanup, cloneToTemp } from "../git";
 import { isGitHubUrl, parseGitHubUrl } from "../github";
-import { computePluginHash, resolvePluginName } from "../identity";
+import { computePluginHash, inferPluginName } from "../resolution";
 import type { DiscoveredComponent } from "../types";
-import { validatePluginName } from "../types";
 
 export interface ScanOptions {
   verbose?: boolean;
@@ -55,28 +54,10 @@ export async function scan(path: string, options: ScanOptions): Promise<void> {
       }
     }
 
-    // 2. Resolve plugin identity
+    // 2. Resolve plugin identity using unified logic
     let pluginName: string;
     try {
-      // For remote scans, derive name from URL instead of temp directory
-      if (isGitHubUrl(path)) {
-        const parsed = parseGitHubUrl(path);
-        if (!parsed) {
-          throw new Error(`Invalid GitHub URL: ${path}`);
-        }
-        // Use subpath if present (e.g., "foo" from "plugins/foo"), otherwise use repo name
-        const lastPathPart = parsed.subpath?.split("/").filter(Boolean).pop();
-        pluginName = (lastPathPart || parsed.repo).toLowerCase();
-
-        // Validate the derived name
-        if (!validatePluginName(pluginName)) {
-          throw new Error(
-            `Invalid plugin name "${pluginName}" derived from URL. Plugin names must be lowercase alphanumeric with hyphens.`,
-          );
-        }
-      } else {
-        pluginName = resolvePluginName(absolutePath);
-      }
+      pluginName = await inferPluginName(absolutePath, isGitHubUrl(path) ? path : undefined);
 
       if (options.verbose) {
         console.log(`[VERBOSE] Resolved plugin name: ${pluginName}`);
