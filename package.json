@@ -44,6 +44,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@inquirer/prompts": "^8.1.0",
     "cac": "^6.7.14"
   }
 }

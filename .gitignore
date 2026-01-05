@@ -30,5 +30,8 @@ node_modules/
 /opencode-marketplace
 /opencode-marketplace.exe
 
+# TypeScript incremental build cache
+*.tsbuildinfo
+
 # Taskmaster files
 .taskmaster/
