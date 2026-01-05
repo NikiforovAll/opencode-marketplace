@@ -1,14 +1,20 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { computePluginHash, resolvePluginName } from "../src/identity";
+import { computePluginHash, resolvePluginName } from "../src/resolution";
 import type { DiscoveredComponent } from "../src/types";
 
-describe("Identity", () => {
+describe("Resolution", () => {
   describe("resolvePluginName", () => {
     test("should extract and normalize name from path", () => {
       expect(resolvePluginName("/path/to/my-plugin")).toBe("my-plugin");
       expect(resolvePluginName("C:\\Users\\dev\\My-Plugin")).toBe("my-plugin");
+    });
+
+    test("should strip leading dots from directory names", () => {
+      expect(resolvePluginName("/path/to/.claude-plugin")).toBe("claude-plugin");
+      expect(resolvePluginName("/path/to/.hidden-dir")).toBe("hidden-dir");
+      expect(resolvePluginName("/path/to/..multiple-dots")).toBe("multiple-dots");
     });
 
     test("should throw on invalid names", () => {

@@ -5,9 +5,9 @@ import { discoverComponents } from "../discovery";
 import { formatComponentCount } from "../format";
 import { cleanup, cloneToTemp } from "../git";
 import { isGitHubUrl, parseGitHubUrl } from "../github";
-import { computePluginHash, resolvePluginName } from "../identity";
 import { ensureComponentDirsExist, getComponentTargetPath } from "../paths";
 import { getInstalledPlugin, loadRegistry, saveRegistry } from "../registry";
+import { computePluginHash, inferPluginName } from "../resolution";
 import type {
   ComponentType,
   DiscoveredComponent,
@@ -15,7 +15,6 @@ import type {
   PluginSource,
   Scope,
 } from "../types";
-import { validatePluginName } from "../types";
 
 export interface InstallOptions {
   scope: "user" | "project";
@@ -78,27 +77,11 @@ export async function install(path: string, options: InstallOptions) {
       };
     }
 
-    // Step 2: Resolve plugin identity
-    // For remote installations, derive name from URL instead of temp directory
-    let pluginName: string;
-    if (pluginSource.type === "remote") {
-      const parsed = parseGitHubUrl(path);
-      if (!parsed) {
-        throw new Error(`Invalid GitHub URL: ${path}`);
-      }
-      // Use subpath if present (e.g., "foo" from "plugins/foo"), otherwise use repo name
-      const lastPathPart = parsed.subpath?.split("/").filter(Boolean).pop();
-      pluginName = (lastPathPart || parsed.repo).toLowerCase();
-
-      // Validate the derived name
-      if (!validatePluginName(pluginName)) {
-        throw new Error(
-          `Invalid plugin name "${pluginName}" derived from URL. Plugin names must be lowercase alphanumeric with hyphens.`,
-        );
-      }
-    } else {
-      pluginName = resolvePluginName(pluginPath);
-    }
+    // Step 2: Resolve plugin identity using unified logic
+    const pluginName = await inferPluginName(
+      pluginPath,
+      pluginSource.type === "remote" ? path : undefined,
+    );
 
     if (verbose) {
       console.log(`[VERBOSE] Resolved plugin name: ${pluginName}`);

@@ -1,8 +1,8 @@
 import { discoverComponents } from "../discovery";
 import { cleanup, cloneToTemp } from "../git";
 import { parseGitHubUrl } from "../github";
-import { computePluginHash } from "../identity";
 import { getInstalledPlugin } from "../registry";
+import { computePluginHash } from "../resolution";
 import { install } from "./install";
 
 export interface UpdateOptions {
