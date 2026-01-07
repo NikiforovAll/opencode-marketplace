@@ -1,3 +1,8 @@
+---
+name: opencode-marketplace
+description: Reference guide for the opencode-marketplace CLI tool. Use this skill when users want to install, uninstall, update, list, or scan OpenCode plugins; manage plugin components (commands, agents, skills); work with plugin scopes (user/project); handle GitHub-based plugins; or need guidance on plugin structure and conventions.
+---
+
 # OpenCode Marketplace CLI Skill
 
 Use this skill to manage OpenCode plugins through the opencode-marketplace CLI tool.
@@ -13,6 +18,25 @@ The OpenCode Marketplace CLI provides a convention-based plugin system for OpenC
 - Uninstall plugins cleanly
 - Support for user-global and project-local scopes
 - Content-hash based change detection (no versions needed)
+
+## Quick Reference
+
+| Command | Syntax | Purpose |
+|---------|--------|---------|
+| **install** | `install <path> [options]` | Install plugin from local path or GitHub URL |
+| **uninstall** | `uninstall <name> [options]` | Remove installed plugin |
+| **list** | `list [options]` | Show installed plugins |
+| **scan** | `scan <path>` | Preview plugin contents (dry-run) |
+| **update** | `update <name> [options]` | Update remote plugin to latest |
+
+**Common Options:**
+- `--scope <user|project>` - Target scope (default: user)
+- `--force` - Force overwrite conflicts (install only)
+- `--verbose` - Detailed output
+
+**Path Types:**
+- **Local**: `/path/to/plugin` or `./relative/path`
+- **GitHub**: `https://github.com/owner/repo[/tree/ref][/subfolder]`
 
 ## Installation
 
@@ -32,7 +56,7 @@ bun install -g opencode-marketplace
 
 ### 1. Install a Plugin
 
-Install a plugin from a local directory:
+Install a plugin from a local directory or GitHub URL:
 
 ```bash
 bunx opencode-marketplace install <path> [options]
@@ -45,20 +69,26 @@ bunx opencode-marketplace install <path> [options]
 - `--force` - Overwrite existing untracked files
 - `--verbose` - Show detailed installation progress
 
+**Path Types:**
+- **Local directory**: `/absolute/path/to/plugin` or `./relative/path`
+- **GitHub URL**: `https://github.com/owner/repo[/tree/branch][/subfolder]`
+
 **Examples:**
 
 ```bash
-# Install to user scope (global)
+# Local installation
 bunx opencode-marketplace install ~/plugins/my-plugin
-
-# Install to project scope (local)
 bunx opencode-marketplace install ./vendor/custom-plugin --scope project
 
-# Force overwrite existing files
+# GitHub installation
+bunx opencode-marketplace install https://github.com/user/opencode-plugins
+bunx opencode-marketplace install https://github.com/org/repo/tree/main/plugins/tools
+
+# Force overwrite
 bunx opencode-marketplace install ~/plugins/my-plugin --force
 
 # Verbose output
-bunx opencode-marketplace install ~/plugins/my-plugin --verbose
+bunx opencode-marketplace install https://github.com/user/tools --verbose
 ```
 
 **Output Example:**
@@ -142,6 +172,44 @@ bunx opencode-marketplace uninstall custom-tools --scope project
 bunx opencode-marketplace uninstall my-plugin --verbose
 ```
 
+### 5. Update a Plugin
+
+Update a plugin from its remote source (GitHub):
+
+```bash
+bunx opencode-marketplace update <name> [options]
+```
+
+**Options:**
+- `--scope <user|project>` - Scope to update from (default: user)
+- `--verbose` - Show detailed update progress
+
+**How It Works:**
+1. Fetches latest from the original GitHub URL stored in registry
+2. Compares content hash to detect changes
+3. If unchanged: "Plugin is already up to date"
+4. If changed: Automatically reinstalls with new content
+
+**Examples:**
+
+```bash
+# Update user-scope plugin
+bunx opencode-marketplace update my-plugin
+
+# Update project-scope plugin
+bunx opencode-marketplace update custom-tools --scope project
+
+# Check current version before updating
+bunx opencode-marketplace list --verbose
+
+# Update with verbose output
+bunx opencode-marketplace update my-plugin --verbose
+```
+
+**Important Notes:**
+- Only works for **remote (GitHub) plugins**, not local installations
+- For local plugins, edit at source and reinstall: `install ~/path/to/plugin`
+- Preserves original scope and component selection from installation
 
 ## Plugin Structure
 
@@ -179,6 +247,123 @@ The CLI searches for components in this order (first match wins):
 - Must be lowercase alphanumeric with hyphens only
 - Examples: `my-plugin`, `code-tools`, `git-helpers`
 - Invalid: `MyPlugin`, `my_plugin`, `my plugin!`
+
+## Working with GitHub Plugins
+
+### Supported URL Formats
+
+The CLI supports direct GitHub URLs for installation:
+
+**Basic repository**:
+```bash
+https://github.com/owner/repo
+```
+
+**Specific branch or tag**:
+```bash
+https://github.com/owner/repo/tree/main
+https://github.com/owner/repo/tree/v1.0.0
+https://github.com/owner/repo/tree/develop
+```
+
+**Subfolder (monorepo plugins)**:
+```bash
+https://github.com/owner/repo/tree/main/plugins/my-plugin
+https://github.com/owner/repo/tree/v2.0/packages/tools
+```
+
+### Installation from GitHub
+
+```bash
+# Install from main branch
+bunx opencode-marketplace install https://github.com/user/opencode-plugins
+
+# Install from specific branch
+bunx opencode-marketplace install https://github.com/user/plugins/tree/develop
+
+# Install from subfolder
+bunx opencode-marketplace install https://github.com/user/monorepo/tree/main/plugins/cli-tools
+
+# Interactive install from GitHub
+bunx opencode-marketplace install https://github.com/user/plugins --interactive
+
+# Scan before installing
+bunx opencode-marketplace scan https://github.com/user/plugins
+```
+
+### How GitHub Installation Works
+
+1. **Clone**: Repository is cloned to a temporary directory
+2. **Navigate**: If subpath specified, CLI navigates to that folder
+3. **Discover**: Components discovered using standard priority rules
+4. **Install**: Files copied with namespacing to target scope
+5. **Cleanup**: Temporary directory is automatically removed
+
+### Updating Remote Plugins
+
+```bash
+# Update to latest from tracked branch/tag
+bunx opencode-marketplace update my-plugin
+
+# View current version before updating
+bunx opencode-marketplace list --verbose
+```
+
+**Update Behavior**:
+- Fetches latest from the original GitHub URL stored in registry
+- Compares content hash to detect changes
+- If unchanged: "Plugin is already up to date"
+- If changed: Automatically reinstalls with new content
+- Preserves original scope and component selection
+
+### GitHub URL Best Practices
+
+1. **Pin to branches/tags** for stability:
+   ```bash
+   # ✓ Good: Pinned to v1.x branch
+   https://github.com/user/plugins/tree/v1.x
+
+   # ⚠ Caution: Tracks main (may change frequently)
+   https://github.com/user/plugins
+   ```
+
+2. **Use subfolders for monorepos**:
+   ```bash
+   # Each plugin in separate subfolder
+   https://github.com/company/opencode-tools/tree/main/plugins/git-helpers
+   https://github.com/company/opencode-tools/tree/main/plugins/docker-utils
+   ```
+
+3. **Scan before installing**:
+   ```bash
+   bunx opencode-marketplace scan <github-url>
+   ```
+
+### Troubleshooting GitHub Plugins
+
+**Authentication Issues**:
+If the repository is private, ensure git has access:
+```bash
+# Configure git credentials
+git config --global credential.helper store
+
+# Or use SSH URLs (not currently supported - use HTTPS)
+```
+
+**Large Repositories**:
+For very large repos, cloning may take time. Consider:
+- Using subfolders to target specific plugins
+- Asking maintainers to split into smaller repos
+- Using `--verbose` to see progress
+
+**Network Issues**:
+```bash
+# If clone fails, check network/proxy
+git clone <repo-url>  # Test git connectivity
+
+# Retry with verbose output
+bunx opencode-marketplace install <github-url> --verbose
+```
 
 ## How It Works
 
@@ -266,47 +451,49 @@ git clone https://github.com/user/shared-tools ~/plugins/shared-tools
 bunx opencode-marketplace install ~/plugins/shared-tools
 ```
 
-## Troubleshooting
+### Installing from GitHub
 
-### Plugin Not Found
-```
-Error: Plugin directory not found: /path/to/plugin
-```
-**Solution:** Verify the path exists and is correct.
-
-### No Components Found
-```
-Error: No components found in /path/to/plugin. Ensure plugin contains command/, agent/, or skill/ directories with valid components.
-```
-**Solution:** Check that you have at least one component directory (`command/`, `agent/`, or `skill/`) with valid content.
-
-### Conflict Detected
-```
-Conflict detected:
-  command/my-plugin--test.md exists but is untracked
-
-Use --force to override existing files.
-```
-**Solution:** Either remove the conflicting file or use `--force` to override it:
 ```bash
-bunx opencode-marketplace install /path/to/plugin --force
-```
+# 1. Scan repository to preview contents
+bunx opencode-marketplace scan https://github.com/awesome-org/opencode-plugins
 
-### Invalid Plugin Name
-```
-Error: Invalid plugin name "My_Plugin!". Plugin names must be lowercase alphanumeric with hyphens.
-```
-**Solution:** Rename your plugin directory to use only lowercase letters, numbers, and hyphens.
+# 2. Install directly
+bunx opencode-marketplace install https://github.com/awesome-org/opencode-plugins
 
-### Plugin Not Installed in Scope
-```
-Error: Plugin "my-plugin" is not installed in project scope.
-
-Run 'opencode-marketplace list --scope project' to see installed plugins.
-```
-**Solution:** Check which scope the plugin is installed in:
-```bash
+# 3. Verify installation
 bunx opencode-marketplace list
+```
+
+### Updating Remote Plugins
+
+```bash
+# 1. List installed plugins to find remote ones
+bunx opencode-marketplace list
+
+# Example output:
+# User scope:
+#   awesome-tools [a1b2c3d4] (2 commands, 1 skill)
+#     Source: https://github.com/user/awesome-tools
+
+# 2. Update to latest
+bunx opencode-marketplace update awesome-tools
+
+# 3. Check new hash
+bunx opencode-marketplace list
+```
+
+### Monorepo Plugin Management
+
+```bash
+# Install specific plugins from a monorepo
+bunx opencode-marketplace install https://github.com/company/tools/tree/main/plugins/git-helpers
+bunx opencode-marketplace install https://github.com/company/tools/tree/main/plugins/docker-utils
+
+# Each gets tracked separately
+bunx opencode-marketplace list
+# Output:
+#   git-helpers [abc123] (3 commands)
+#   docker-utils [def456] (2 commands, 1 agent)
 ```
 
 ## Best Practices
@@ -318,6 +505,10 @@ bunx opencode-marketplace list
 5. **Document Your Plugins**: Add clear comments in your command/agent files
 6. **Test Skills Thoroughly**: Ensure `SKILL.md` is complete before installing
 7. **Organize Plugin Sources**: Keep a dedicated directory for your plugin collection
+8. **Pin GitHub Plugins**: Use specific branches/tags for stability (`/tree/v1.x` not `/tree/main`)
+9. **Scan Remote Plugins First**: Run `scan <github-url>` before installing from GitHub
+10. **Update Remote Plugins Regularly**: Run `update <name>` to get latest fixes and improvements
+11. **Leverage Scopes Strategically**: User scope for tools across projects, project scope for team-specific plugins
 
 ## Integration with OpenCode
 
