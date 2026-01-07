@@ -68,7 +68,13 @@ export function run(argv = process.argv) {
   cli.version(version);
 
   try {
-    cli.parse(argv);
+    const parsed = cli.parse(argv);
+
+    // Show help when no command is provided
+    if (!parsed.args.length && !parsed.options.help && !parsed.options.version) {
+      cli.outputHelp();
+      process.exit(0);
+    }
   } catch (error) {
     if (error instanceof Error && error.message.includes("missing required args")) {
       console.error(error.message);

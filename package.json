@@ -1,6 +1,6 @@
 {
   "name": "opencode-marketplace",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "CLI marketplace for OpenCode plugins",
   "type": "module",
   "author": "nikiforovall",
