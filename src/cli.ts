@@ -13,6 +13,10 @@ export function run(argv = process.argv) {
   cli
     .command("install <path>", "Install a plugin from a local directory or GitHub URL")
     .option("--scope <scope>", "Installation scope (user/project)", { default: "user" })
+    .option(
+      "--target-dir <dir>",
+      "Custom installation directory (overrides default scope directory)",
+    )
     .option("--force", "Overwrite existing components", { default: false })
     .option("-i, --interactive", "Interactively select components to install", { default: false })
     .action(async (path, options) => {
@@ -20,6 +24,7 @@ export function run(argv = process.argv) {
         console.error(`Invalid scope: ${options.scope}. Must be 'user' or 'project'.`);
         process.exit(1);
       }
+
       try {
         await install(path, options);
       } catch (error) {

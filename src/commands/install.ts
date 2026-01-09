@@ -280,7 +280,8 @@ export async function install(path: string, options: InstallOptions): Promise<In
 
     // Step 11: Print success message
     const componentCounts = formatComponentCount(installedComponents);
-    console.log(`\nInstalled ${pluginName} (${componentCounts}) to ${scope} scope.`);
+    const locationMsg = targetDir ? `to ${targetDir}` : `to ${scope} scope`;
+    console.log(`\nInstalled ${pluginName} (${componentCounts}) ${locationMsg}.`);
 
     return { status: installStatus, pluginName };
   } catch (error) {
