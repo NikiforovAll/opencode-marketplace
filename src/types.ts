@@ -41,6 +41,13 @@ export interface PluginRegistry {
   plugins: Record<string, InstalledPlugin>;
 }
 
+/**
+ * Configuration for importing multiple plugins at once
+ */
+export interface ImportConfig {
+  plugins: string[];
+}
+
 // Validation & Helpers
 
 /**

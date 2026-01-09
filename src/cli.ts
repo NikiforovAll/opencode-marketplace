@@ -1,5 +1,6 @@
 import { cac } from "cac";
 import { version } from "../package.json";
+import { importPlugins } from "./commands/import";
 import { install } from "./commands/install";
 import { list } from "./commands/list";
 import { scan } from "./commands/scan";
@@ -12,14 +13,36 @@ export function run(argv = process.argv) {
   cli
     .command("install <path>", "Install a plugin from a local directory or GitHub URL")
     .option("--scope <scope>", "Installation scope (user/project)", { default: "user" })
+    .option(
+      "--target-dir <dir>",
+      "Custom installation directory (overrides default scope directory)",
+    )
     .option("--force", "Overwrite existing components", { default: false })
     .option("-i, --interactive", "Interactively select components to install", { default: false })
-    .action((path, options) => {
+    .action(async (path, options) => {
       if (options.scope !== "user" && options.scope !== "project") {
         console.error(`Invalid scope: ${options.scope}. Must be 'user' or 'project'.`);
         process.exit(1);
       }
-      return install(path, options);
+
+      try {
+        await install(path, options);
+      } catch (error) {
+        if (error instanceof Error) {
+          console.error(`\nError: ${error.message}`);
+        } else {
+          console.error("\nUnknown error occurred during installation");
+        }
+        process.exit(1);
+      }
+    });
+
+  cli
+    .command("import [config-path]", "Install plugins from import config file")
+    .option("--target-dir <dir>", "Custom installation directory (overrides ~/.config/opencode)")
+    .option("--force", "Overwrite existing components", { default: false })
+    .action((configPath, options) => {
+      return importPlugins(configPath, options);
     });
 
   cli
@@ -67,14 +90,15 @@ export function run(argv = process.argv) {
   cli.help();
   cli.version(version);
 
-  try {
-    const parsed = cli.parse(argv);
+  // Show help when no command is provided (just "opencode-marketplace")
+  // argv.length is 2 when only executable is run (process.argv includes [node, script])
+  if (argv.length <= 2) {
+    cli.outputHelp();
+    process.exit(0);
+  }
 
-    // Show help when no command is provided
-    if (!parsed.args.length && !parsed.options.help && !parsed.options.version) {
-      cli.outputHelp();
-      process.exit(0);
-    }
+  try {
+    cli.parse(argv);
   } catch (error) {
     if (error instanceof Error && error.message.includes("missing required args")) {
       console.error(error.message);

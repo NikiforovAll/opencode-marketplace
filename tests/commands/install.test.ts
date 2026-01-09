@@ -234,52 +234,28 @@ describe("Install Command", () => {
   });
 
   test("should error on non-existent plugin directory", async () => {
-    const consoleSpy = spyOn(console, "log");
-    const errorSpy = spyOn(console, "error");
-    const exitSpy = spyOn(process, "exit").mockImplementation(() => {
-      throw new Error("process.exit called");
-    });
-
     try {
       await install(join(pluginsDir, "non-existent"), {
         scope: "project",
         force: false,
         verbose: false,
       });
-    } catch (_error) {
-      // Expected to throw
+      expect.unreachable("Should have thrown an error");
+    } catch (error) {
+      expect(error.message).toContain("Plugin directory not found");
     }
-
-    const errorOutput = errorSpy.mock.calls.map((call) => call.join(" ")).join("\n");
-    expect(errorOutput).toContain("Plugin directory not found");
-
-    consoleSpy.mockRestore();
-    errorSpy.mockRestore();
-    exitSpy.mockRestore();
   });
 
   test("should error on plugin with no components", async () => {
     const emptyPlugin = join(pluginsDir, "empty-plugin");
     await mkdir(emptyPlugin, { recursive: true });
 
-    const consoleSpy = spyOn(console, "log");
-    const errorSpy = spyOn(console, "error");
-    const exitSpy = spyOn(process, "exit").mockImplementation(() => {
-      throw new Error("process.exit called");
-    });
-
     try {
       await install(emptyPlugin, { scope: "project", force: false, verbose: false });
-    } catch (_error) {
-      // Expected to throw
+      expect.unreachable("Should have thrown an error");
+    } catch (error) {
+      expect(error.message).toContain("No components found");
     }
-
-    const errorOutput = errorSpy.mock.calls.map((call) => call.join(" ")).join("\n");
-    expect(errorOutput).toContain("No components found");
-
-    consoleSpy.mockRestore();
-    errorSpy.mockRestore();
-    exitSpy.mockRestore();
   });
 
   test("should handle verbose mode correctly", async () => {
@@ -348,23 +324,11 @@ describe("Install Command", () => {
     await mkdir(join(pluginDir, "command"), { recursive: true });
     await writeFile(join(pluginDir, "command/test.md"), "# Test");
 
-    const consoleSpy = spyOn(console, "log");
-    const errorSpy = spyOn(console, "error");
-    const exitSpy = spyOn(process, "exit").mockImplementation(() => {
-      throw new Error("process.exit called");
-    });
-
     try {
       await install(pluginDir, { scope: "project", force: false, verbose: false });
-    } catch (_error) {
-      // Expected to throw
+      expect.unreachable("Should have thrown an error");
+    } catch (error) {
+      expect(error.message).toContain("Invalid plugin name");
     }
-
-    const errorOutput = errorSpy.mock.calls.map((call) => call.join(" ")).join("\n");
-    expect(errorOutput).toContain("Invalid plugin name");
-
-    consoleSpy.mockRestore();
-    errorSpy.mockRestore();
-    exitSpy.mockRestore();
   });
 });
