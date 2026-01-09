@@ -7,9 +7,10 @@ import type { InstalledPlugin, PluginRegistry, Scope } from "./types";
 /**
  * Returns the path to the registry file for the given scope.
  */
-export function getRegistryPath(scope: Scope): string {
+export function getRegistryPath(scope: Scope, targetDir?: string): string {
   if (scope === "user") {
-    return join(homedir(), ".config", "opencode", "plugins", "installed.json");
+    const base = targetDir || join(homedir(), ".config", "opencode");
+    return join(base, "plugins", "installed.json");
   }
   // project scope
   return join(process.cwd(), ".opencode", "plugins", "installed.json");
@@ -19,8 +20,8 @@ export function getRegistryPath(scope: Scope): string {
  * Loads the plugin registry for the given scope.
  * Returns an empty registry if the file does not exist.
  */
-export async function loadRegistry(scope: Scope): Promise<PluginRegistry> {
-  const path = getRegistryPath(scope);
+export async function loadRegistry(scope: Scope, targetDir?: string): Promise<PluginRegistry> {
+  const path = getRegistryPath(scope, targetDir);
 
   if (!existsSync(path)) {
     return { version: 2, plugins: {} };
@@ -47,8 +48,12 @@ export async function loadRegistry(scope: Scope): Promise<PluginRegistry> {
  * Saves the plugin registry for the given scope.
  * Uses atomic write pattern.
  */
-export async function saveRegistry(registry: PluginRegistry, scope: Scope): Promise<void> {
-  const path = getRegistryPath(scope);
+export async function saveRegistry(
+  registry: PluginRegistry,
+  scope: Scope,
+  targetDir?: string,
+): Promise<void> {
+  const path = getRegistryPath(scope, targetDir);
   const dir = join(path, "..");
 
   if (!existsSync(dir)) {
@@ -66,8 +71,9 @@ export async function saveRegistry(registry: PluginRegistry, scope: Scope): Prom
 export async function getInstalledPlugin(
   name: string,
   scope: Scope,
+  targetDir?: string,
 ): Promise<InstalledPlugin | null> {
-  const registry = await loadRegistry(scope);
+  const registry = await loadRegistry(scope, targetDir);
   return registry.plugins[name] || null;
 }
 

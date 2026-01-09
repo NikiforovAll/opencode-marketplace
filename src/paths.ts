@@ -10,10 +10,10 @@ import { getComponentTargetName } from "./types";
  *   - User scope: "~/.config/opencode/command/"
  *   - Project scope: ".opencode/command/"
  */
-export function getComponentDir(type: ComponentType, scope: Scope): string {
+export function getComponentDir(type: ComponentType, scope: Scope, targetDir?: string): string {
   const basePath =
     scope === "user"
-      ? join(homedir(), ".config", "opencode", type)
+      ? join(targetDir || join(homedir(), ".config", "opencode"), type)
       : join(process.cwd(), ".opencode", type);
 
   return `${normalize(basePath)}/`;
@@ -32,8 +32,9 @@ export function getComponentTargetPath(
   componentName: string,
   type: ComponentType,
   scope: Scope,
+  targetDir?: string,
 ): string {
-  const baseDir = getComponentDir(type, scope);
+  const baseDir = getComponentDir(type, scope, targetDir);
   const targetName = getComponentTargetName(pluginName, componentName);
   const fullPath = join(baseDir, targetName);
 
@@ -49,8 +50,10 @@ export function getComponentTargetPath(
  * Ensures all component directories (command, agent, skill) exist for the given scope.
  * Idempotent - safe to call multiple times.
  */
-export async function ensureComponentDirsExist(scope: Scope): Promise<void> {
+export async function ensureComponentDirsExist(scope: Scope, targetDir?: string): Promise<void> {
   const dirs: ComponentType[] = ["command", "agent", "skill"];
 
-  await Promise.all(dirs.map((type) => mkdir(getComponentDir(type, scope), { recursive: true })));
+  await Promise.all(
+    dirs.map((type) => mkdir(getComponentDir(type, scope, targetDir), { recursive: true })),
+  );
 }
