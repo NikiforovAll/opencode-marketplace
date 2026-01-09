@@ -21,6 +21,8 @@ export interface InstallOptions {
   force: boolean;
   verbose?: boolean;
   interactive?: boolean;
+  skipIfSameHash?: boolean;
+  targetDir?: string;
 }
 
 interface ConflictInfo {
@@ -29,10 +31,16 @@ interface ConflictInfo {
   conflictingPlugin: string | null; // null = untracked file
 }
 
-export async function install(path: string, options: InstallOptions) {
-  const { scope, force, verbose, interactive } = options;
+export interface InstallResult {
+  status: "installed" | "updated" | "skipped";
+  pluginName: string;
+}
+
+export async function install(path: string, options: InstallOptions): Promise<InstallResult> {
+  const { scope, force, verbose, interactive, skipIfSameHash, targetDir } = options;
 
   let tempDir: string | null = null;
+
   let pluginSource: PluginSource;
 
   try {
@@ -110,7 +118,7 @@ export async function install(path: string, options: InstallOptions) {
           if (tempDir) {
             await cleanup(tempDir);
           }
-          return;
+          return { status: "skipped", pluginName: "" };
         }
 
         if (result.selected.length === 0) {
@@ -118,7 +126,7 @@ export async function install(path: string, options: InstallOptions) {
           if (tempDir) {
             await cleanup(tempDir);
           }
-          return;
+          return { status: "skipped", pluginName: "" };
         }
 
         componentsToInstall = result.selected;
@@ -128,7 +136,7 @@ export async function install(path: string, options: InstallOptions) {
           if (tempDir) {
             await cleanup(tempDir);
           }
-          return;
+          return { status: "skipped", pluginName: "" };
         }
         throw error;
       }
@@ -151,14 +159,25 @@ export async function install(path: string, options: InstallOptions) {
     console.log(`Installing ${pluginName} [${shortHash}]...`);
 
     // Step 5: Check for existing installation
-    const existingPlugin = await getInstalledPlugin(pluginName, scope);
+    const existingPlugin = await getInstalledPlugin(pluginName, scope, targetDir);
+    let installStatus: "installed" | "updated" | "skipped" = "installed";
 
     if (existingPlugin) {
       if (existingPlugin.hash === pluginHash) {
+        if (skipIfSameHash) {
+          if (verbose) {
+            console.log(`[VERBOSE] Skipping ${pluginName} (already up to date)`);
+          }
+          if (tempDir) {
+            await cleanup(tempDir);
+          }
+          return { status: "skipped", pluginName };
+        }
         // Same plugin, same hash - reinstall
         if (verbose) {
           console.log(`[VERBOSE] Reinstalling existing plugin (same hash)`);
         }
+        installStatus = "installed";
       } else {
         // Same plugin, different hash - update
         if (verbose) {
@@ -166,11 +185,12 @@ export async function install(path: string, options: InstallOptions) {
             `[VERBOSE] Updating plugin from [${existingPlugin.hash.substring(0, 8)}] to [${shortHash}]`,
           );
         }
+        installStatus = "updated";
       }
     }
 
     // Step 6: Detect conflicts
-    const conflicts = await detectConflicts(componentsToInstall, pluginName, scope);
+    const conflicts = await detectConflicts(componentsToInstall, pluginName, scope, targetDir);
 
     if (conflicts.length > 0 && !force) {
       console.error("\nConflict detected:");
@@ -194,7 +214,7 @@ export async function install(path: string, options: InstallOptions) {
     }
 
     // Step 7: Ensure target directories exist
-    await ensureComponentDirsExist(scope);
+    await ensureComponentDirsExist(scope, targetDir);
 
     // Step 8: Copy components
     const installedComponents = {
@@ -207,7 +227,13 @@ export async function install(path: string, options: InstallOptions) {
     const sortedComponents = [...componentsToInstall].sort((a, b) => a.name.localeCompare(b.name));
 
     for (const component of sortedComponents) {
-      const targetPath = getComponentTargetPath(pluginName, component.name, component.type, scope);
+      const targetPath = getComponentTargetPath(
+        pluginName,
+        component.name,
+        component.type,
+        scope,
+        targetDir,
+      );
 
       // Remove trailing slash for copying
       const normalizedTarget = targetPath.endsWith("/") ? targetPath.slice(0, -1) : targetPath;
@@ -233,7 +259,7 @@ export async function install(path: string, options: InstallOptions) {
     }
 
     // Step 9: Update registry
-    const registry = await loadRegistry(scope);
+    const registry = await loadRegistry(scope, targetDir);
 
     const newPlugin: InstalledPlugin = {
       name: pluginName,
@@ -245,7 +271,7 @@ export async function install(path: string, options: InstallOptions) {
     };
 
     registry.plugins[pluginName] = newPlugin;
-    await saveRegistry(registry, scope);
+    await saveRegistry(registry, scope, targetDir);
 
     // Step 10: Cleanup temp directory if remote installation
     if (tempDir) {
@@ -255,18 +281,16 @@ export async function install(path: string, options: InstallOptions) {
     // Step 11: Print success message
     const componentCounts = formatComponentCount(installedComponents);
     console.log(`\nInstalled ${pluginName} (${componentCounts}) to ${scope} scope.`);
+
+    return { status: installStatus, pluginName };
   } catch (error) {
     // Cleanup temp directory on error
     if (tempDir) {
       await cleanup(tempDir);
     }
 
-    if (error instanceof Error) {
-      console.error(`\nError: ${error.message}`);
-    } else {
-      console.error("\nUnknown error occurred during installation");
-    }
-    process.exit(1);
+    // Re-throw the error to let the caller handle it
+    throw error;
   }
 }
 
@@ -280,12 +304,19 @@ async function detectConflicts(
   components: DiscoveredComponent[],
   pluginName: string,
   scope: Scope,
+  targetDir?: string,
 ): Promise<ConflictInfo[]> {
   const conflicts: ConflictInfo[] = [];
-  const registry = await loadRegistry(scope);
+  const registry = await loadRegistry(scope, targetDir);
 
   for (const component of components) {
-    const targetPath = getComponentTargetPath(pluginName, component.name, component.type, scope);
+    const targetPath = getComponentTargetPath(
+      pluginName,
+      component.name,
+      component.type,
+      scope,
+      targetDir,
+    );
 
     // Remove trailing slash for existence check
     const normalizedTarget = targetPath.endsWith("/") ? targetPath.slice(0, -1) : targetPath;
