@@ -42,7 +42,7 @@ export async function loadImportConfig(configPath: string): Promise<ImportConfig
     throw new Error("Invalid import configuration: expected an object");
   }
 
-  if (!Array.isArray(config.plugins)) {
+  if (!("plugins" in config) || !Array.isArray(config.plugins)) {
     throw new Error("Invalid import configuration: 'plugins' must be an array");
   }
 
