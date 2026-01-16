@@ -21,7 +21,7 @@
     "src"
   ],
   "bin": {
-    "opencode-marketplace": "bin/opencode"
+    "opencode-marketplace": "bin/opencode-marketplace"
   },
   "scripts": {
     "dev": "bun run src/index.ts",
