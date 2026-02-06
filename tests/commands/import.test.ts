@@ -58,8 +58,8 @@ describe("Import Command", () => {
     expect(output).toContain("Skipped:   0");
 
     // Verify files
-    expect(existsSync(join(targetDir, "command/plugin1--cmd1.md"))).toBe(true);
-    expect(existsSync(join(targetDir, "agent/plugin2--agent1.md"))).toBe(true);
+    expect(existsSync(join(targetDir, "commands/plugin1--cmd1.md"))).toBe(true);
+    expect(existsSync(join(targetDir, "agents/plugin2--agent1.md"))).toBe(true);
 
     // Verify registry
     const registry = await loadRegistry("user", targetDir);

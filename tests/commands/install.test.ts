@@ -60,10 +60,12 @@ describe("Install Command", () => {
     expect(output).toContain("1 command, 1 agent, 1 skill");
 
     // Verify files were copied
-    expect(existsSync(join(installDir, ".opencode/command/test-plugin--cmd1.md"))).toBe(true);
-    expect(existsSync(join(installDir, ".opencode/agent/test-plugin--helper.md"))).toBe(true);
-    expect(existsSync(join(installDir, ".opencode/skill/test-plugin--review/SKILL.md"))).toBe(true);
-    expect(existsSync(join(installDir, ".opencode/skill/test-plugin--review/data.json"))).toBe(
+    expect(existsSync(join(installDir, ".opencode/commands/test-plugin--cmd1.md"))).toBe(true);
+    expect(existsSync(join(installDir, ".opencode/agents/test-plugin--helper.md"))).toBe(true);
+    expect(existsSync(join(installDir, ".opencode/skills/test-plugin--review/SKILL.md"))).toBe(
+      true,
+    );
+    expect(existsSync(join(installDir, ".opencode/skills/test-plugin--review/data.json"))).toBe(
       true,
     );
 
@@ -163,7 +165,7 @@ describe("Install Command", () => {
     // Manually create conflicting file from plugin-two to simulate conflict
     // (We need to manually create because same component name won't conflict with same plugin)
     await writeFile(
-      join(installDir, ".opencode/command/plugin-two--shared.md"),
+      join(installDir, ".opencode/commands/plugin-two--shared.md"),
       "# Conflicting file",
     );
 
@@ -175,7 +177,7 @@ describe("Install Command", () => {
     errorSpy.mockClear();
 
     // Create untracked file that will conflict
-    await writeFile(join(installDir, ".opencode/command/conflict-plugin--test.md"), "# Untracked");
+    await writeFile(join(installDir, ".opencode/commands/conflict-plugin--test.md"), "# Untracked");
 
     const conflictPlugin = join(pluginsDir, "conflict-plugin");
     await mkdir(join(conflictPlugin, "command"), { recursive: true });
@@ -206,8 +208,8 @@ describe("Install Command", () => {
     await writeFile(join(pluginDir, "command/test.md"), "# Test");
 
     // Create untracked conflicting file
-    await mkdir(join(installDir, ".opencode/command"), { recursive: true });
-    await writeFile(join(installDir, ".opencode/command/force-test--test.md"), "# Old content");
+    await mkdir(join(installDir, ".opencode/commands"), { recursive: true });
+    await writeFile(join(installDir, ".opencode/commands/force-test--test.md"), "# Old content");
 
     const consoleSpy = spyOn(console, "log");
     const exitSpy = spyOn(process, "exit").mockImplementation(() => {
@@ -221,7 +223,7 @@ describe("Install Command", () => {
 
     // Verify file was overwritten
     const content = await readFile(
-      join(installDir, ".opencode/command/force-test--test.md"),
+      join(installDir, ".opencode/commands/force-test--test.md"),
       "utf-8",
     );
     expect(content).toBe("# Test");
@@ -303,7 +305,9 @@ describe("Install Command", () => {
     expect(output).toContain("2 skills");
 
     // Verify nested files were copied
-    expect(existsSync(join(installDir, ".opencode/skill/skills-only--task2/helper.js"))).toBe(true);
+    expect(existsSync(join(installDir, ".opencode/skills/skills-only--task2/helper.js"))).toBe(
+      true,
+    );
 
     const registry = await loadRegistry("project");
     expect(registry.plugins["skills-only"].components.skills).toEqual([

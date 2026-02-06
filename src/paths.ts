@@ -1,22 +1,32 @@
 import { mkdir } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join, normalize } from "node:path";
+import { resolveUserSkillsPath } from "./config";
 import type { ComponentType, Scope } from "./types";
 import { getComponentTargetName } from "./types";
+
+function pluralizeType(type: ComponentType): string {
+  return `${type}s`;
+}
 
 /**
  * Returns the base directory for a component type with trailing slash.
  * Examples:
- *   - User scope: "~/.config/opencode/command/"
- *   - Project scope: ".opencode/command/"
+ *   - User scope: "~/.config/opencode/commands/", "~/.agents/skills/"
+ *   - Project scope: ".opencode/commands/"
  */
 export function getComponentDir(type: ComponentType, scope: Scope, targetDir?: string): string {
-  const basePath =
-    scope === "user"
-      ? join(targetDir || join(homedir(), ".config", "opencode"), type)
-      : join(process.cwd(), ".opencode", type);
+  if (scope === "user") {
+    if (targetDir) {
+      return `${normalize(join(targetDir, pluralizeType(type)))}/`;
+    }
+    if (type === "skill") {
+      return `${normalize(resolveUserSkillsPath())}/`;
+    }
+    return `${normalize(join(homedir(), ".config", "opencode", pluralizeType(type)))}/`;
+  }
 
-  return `${normalize(basePath)}/`;
+  return `${normalize(join(process.cwd(), ".opencode", pluralizeType(type)))}/`;
 }
 
 /**
@@ -24,8 +34,8 @@ export function getComponentDir(type: ComponentType, scope: Scope, targetDir?: s
  * Handles both files (commands/agents) and directories (skills).
  *
  * Examples:
- *   - Command: "~/.config/opencode/command/myplugin--reflect.md"
- *   - Skill: "~/.config/opencode/skill/myplugin--code-review/"
+ *   - Command: "~/.config/opencode/commands/myplugin--reflect.md"
+ *   - Skill: "~/.agents/skills/myplugin--code-review/"
  */
 export function getComponentTargetPath(
   pluginName: string,
@@ -47,7 +57,7 @@ export function getComponentTargetPath(
 }
 
 /**
- * Ensures all component directories (command, agent, skill) exist for the given scope.
+ * Ensures all component directories (commands, agents, skills) exist for the given scope.
  * Idempotent - safe to call multiple times.
  */
 export async function ensureComponentDirsExist(scope: Scope, targetDir?: string): Promise<void> {
