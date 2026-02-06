@@ -20,14 +20,14 @@ export function run(argv = process.argv) {
     )
     .option("--force", "Overwrite existing components", { default: false })
     .option("-i, --interactive", "Interactively select components to install", { default: false })
-    .option("--agents <dir>", "Custom agents base directory for skills (overrides config)")
+    .option("--agents", "Install skills to ~/.agents/skills/ (overrides config)")
     .action(async (path, options) => {
       if (options.scope !== "user" && options.scope !== "project") {
         console.error(`Invalid scope: ${options.scope}. Must be 'user' or 'project'.`);
         process.exit(1);
       }
       if (options.agents) {
-        setAgentsOverride(options.agents);
+        setAgentsOverride();
       }
 
       try {
@@ -46,10 +46,10 @@ export function run(argv = process.argv) {
     .command("import [config-path]", "Install plugins from import config file")
     .option("--target-dir <dir>", "Custom installation directory (overrides ~/.config/opencode)")
     .option("--force", "Overwrite existing components", { default: false })
-    .option("--agents <dir>", "Custom agents base directory for skills (overrides config)")
+    .option("--agents", "Install skills to ~/.agents/skills/ (overrides config)")
     .action((configPath, options) => {
       if (options.agents) {
-        setAgentsOverride(options.agents);
+        setAgentsOverride();
       }
       return importPlugins(configPath, options);
     });
@@ -57,14 +57,14 @@ export function run(argv = process.argv) {
   cli
     .command("uninstall <name>", "Uninstall a plugin")
     .option("--scope <scope>", "Installation scope (user/project)", { default: "user" })
-    .option("--agents <dir>", "Custom agents base directory for skills (overrides config)")
+    .option("--agents", "Install skills to ~/.agents/skills/ (overrides config)")
     .action((name, options) => {
       if (options.scope !== "user" && options.scope !== "project") {
         console.error(`Invalid scope: ${options.scope}. Must be 'user' or 'project'.`);
         process.exit(1);
       }
       if (options.agents) {
-        setAgentsOverride(options.agents);
+        setAgentsOverride();
       }
       return uninstall(name, options);
     });
@@ -89,14 +89,14 @@ export function run(argv = process.argv) {
   cli
     .command("update <name>", "Update a plugin from its remote source")
     .option("--scope <scope>", "Installation scope (user/project)", { default: "user" })
-    .option("--agents <dir>", "Custom agents base directory for skills (overrides config)")
+    .option("--agents", "Install skills to ~/.agents/skills/ (overrides config)")
     .action((name, options) => {
       if (options.scope !== "user" && options.scope !== "project") {
         console.error(`Invalid scope: ${options.scope}. Must be 'user' or 'project'.`);
         process.exit(1);
       }
       if (options.agents) {
-        setAgentsOverride(options.agents);
+        setAgentsOverride();
       }
       return update(name, options);
     });

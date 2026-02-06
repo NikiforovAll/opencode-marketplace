@@ -8,10 +8,10 @@ function getDefaultSkillsBase(): string {
 }
 
 let cachedConfig: OcmConfig | null = null;
-let agentsOverride: string | null = null;
+let agentsOverride = false;
 
-export function setAgentsOverride(path: string): void {
-  agentsOverride = path;
+export function setAgentsOverride(): void {
+  agentsOverride = true;
 }
 
 export function getConfigPath(): string {
@@ -52,7 +52,7 @@ export function loadConfig(): OcmConfig {
 
 export function resolveUserSkillsPath(): string {
   if (agentsOverride) {
-    return join(agentsOverride, "skills");
+    return join(getDefaultSkillsBase(), "skills");
   }
   const config = loadConfig();
   const base = config.skillsPath || getDefaultSkillsBase();
@@ -61,5 +61,5 @@ export function resolveUserSkillsPath(): string {
 
 export function resetConfigCache(): void {
   cachedConfig = null;
-  agentsOverride = null;
+  agentsOverride = false;
 }
