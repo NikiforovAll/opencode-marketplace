@@ -136,9 +136,9 @@ describe("Scan Command", () => {
 
   test("should scan plugin with only agents", async () => {
     const pluginDir = join(tmpDir, "agents-only");
-    await mkdir(join(pluginDir, ".opencode/agent"), { recursive: true });
-    await writeFile(join(pluginDir, ".opencode/agent/helper.md"), "# Helper");
-    await writeFile(join(pluginDir, ".opencode/agent/reviewer.md"), "# Reviewer");
+    await mkdir(join(pluginDir, ".opencode/agents"), { recursive: true });
+    await writeFile(join(pluginDir, ".opencode/agents/helper.md"), "# Helper");
+    await writeFile(join(pluginDir, ".opencode/agents/reviewer.md"), "# Reviewer");
 
     const consoleSpy = spyOn(console, "log");
 
@@ -173,10 +173,10 @@ describe("Scan Command", () => {
 
   test("should use .opencode priority over .claude", async () => {
     const pluginDir = join(tmpDir, "priority-test");
-    await mkdir(join(pluginDir, ".opencode/command"), { recursive: true });
+    await mkdir(join(pluginDir, ".opencode/commands"), { recursive: true });
     await mkdir(join(pluginDir, ".claude/commands"), { recursive: true });
 
-    await writeFile(join(pluginDir, ".opencode/command/primary.md"), "# Primary");
+    await writeFile(join(pluginDir, ".opencode/commands/primary.md"), "# Primary");
     await writeFile(join(pluginDir, ".claude/commands/secondary.md"), "# Secondary");
 
     const consoleSpy = spyOn(console, "log");

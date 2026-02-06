@@ -5,9 +5,9 @@ import type { ComponentType, DiscoveredComponent } from "./types";
 import { getComponentTargetName } from "./types";
 
 const SEARCH_PATHS: Record<ComponentType, string[]> = {
-  command: [".opencode/command", ".claude/commands", "command", "commands"],
-  agent: [".opencode/agent", ".claude/agents", "agent", "agents"],
-  skill: [".opencode/skill", ".claude/skills", "skill", "skills"],
+  command: [".opencode/commands", ".claude/commands", "commands", "command"],
+  agent: [".opencode/agents", ".claude/agents", "agents", "agent"],
+  skill: [".opencode/skills", ".claude/skills", "skills", "skill"],
 };
 
 /**

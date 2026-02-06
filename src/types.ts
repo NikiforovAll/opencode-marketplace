@@ -48,6 +48,10 @@ export interface ImportConfig {
   plugins: string[];
 }
 
+export interface OcmConfig {
+  skillsPath?: string;
+}
+
 // Validation & Helpers
 
 /**

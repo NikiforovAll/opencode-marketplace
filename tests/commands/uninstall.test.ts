@@ -55,9 +55,9 @@ describe("Uninstall Command", () => {
     installExitSpy.mockRestore();
 
     // Verify plugin was installed
-    expect(existsSync(join(installDir, ".opencode/command/test-uninstall--cmd1.md"))).toBe(true);
-    expect(existsSync(join(installDir, ".opencode/agent/test-uninstall--helper.md"))).toBe(true);
-    expect(existsSync(join(installDir, ".opencode/skill/test-uninstall--review/SKILL.md"))).toBe(
+    expect(existsSync(join(installDir, ".opencode/commands/test-uninstall--cmd1.md"))).toBe(true);
+    expect(existsSync(join(installDir, ".opencode/agents/test-uninstall--helper.md"))).toBe(true);
+    expect(existsSync(join(installDir, ".opencode/skills/test-uninstall--review/SKILL.md"))).toBe(
       true,
     );
 
@@ -86,9 +86,9 @@ describe("Uninstall Command", () => {
     expect(warningOutput).toBe("");
 
     // Verify files were deleted
-    expect(existsSync(join(installDir, ".opencode/command/test-uninstall--cmd1.md"))).toBe(false);
-    expect(existsSync(join(installDir, ".opencode/agent/test-uninstall--helper.md"))).toBe(false);
-    expect(existsSync(join(installDir, ".opencode/skill/test-uninstall--review"))).toBe(false);
+    expect(existsSync(join(installDir, ".opencode/commands/test-uninstall--cmd1.md"))).toBe(false);
+    expect(existsSync(join(installDir, ".opencode/agents/test-uninstall--helper.md"))).toBe(false);
+    expect(existsSync(join(installDir, ".opencode/skills/test-uninstall--review"))).toBe(false);
 
     // Verify registry was updated
     const registry = await loadRegistry("project");
@@ -149,7 +149,7 @@ describe("Uninstall Command", () => {
     installExitSpy.mockRestore();
 
     // Manually delete one component file
-    await rm(join(installDir, ".opencode/agent/partial-missing--helper.md"));
+    await rm(join(installDir, ".opencode/agents/partial-missing--helper.md"));
 
     // Now uninstall
     const uninstallSpy = spyOn(console, "log");
@@ -228,7 +228,7 @@ describe("Uninstall Command", () => {
     expect(successOutput).toContain("Uninstalled scope-test");
 
     // Verify file was deleted
-    expect(existsSync(join(installDir, ".opencode/command/scope-test--test.md"))).toBe(false);
+    expect(existsSync(join(installDir, ".opencode/commands/scope-test--test.md"))).toBe(false);
 
     consoleSpy.mockRestore();
     errorSpy.mockRestore();
@@ -297,8 +297,12 @@ describe("Uninstall Command", () => {
     installExitSpy.mockRestore();
 
     // Verify skill directories were created
-    expect(existsSync(join(installDir, ".opencode/skill/skills-only-uninstall--task1"))).toBe(true);
-    expect(existsSync(join(installDir, ".opencode/skill/skills-only-uninstall--task2"))).toBe(true);
+    expect(existsSync(join(installDir, ".opencode/skills/skills-only-uninstall--task1"))).toBe(
+      true,
+    );
+    expect(existsSync(join(installDir, ".opencode/skills/skills-only-uninstall--task2"))).toBe(
+      true,
+    );
 
     // Uninstall
     const uninstallSpy = spyOn(console, "log");
@@ -316,10 +320,10 @@ describe("Uninstall Command", () => {
     expect(output).toContain("Uninstalled skills-only-uninstall (2 skills) from project scope.");
 
     // Verify skill directories were deleted
-    expect(existsSync(join(installDir, ".opencode/skill/skills-only-uninstall--task1"))).toBe(
+    expect(existsSync(join(installDir, ".opencode/skills/skills-only-uninstall--task1"))).toBe(
       false,
     );
-    expect(existsSync(join(installDir, ".opencode/skill/skills-only-uninstall--task2"))).toBe(
+    expect(existsSync(join(installDir, ".opencode/skills/skills-only-uninstall--task2"))).toBe(
       false,
     );
 
@@ -422,8 +426,8 @@ describe("Uninstall Command", () => {
     expect(registry2.plugins["plugin-2"]).toBeDefined();
 
     // Verify only plugin-1 files were deleted
-    expect(existsSync(join(installDir, ".opencode/command/plugin-1--test1.md"))).toBe(false);
-    expect(existsSync(join(installDir, ".opencode/agent/plugin-2--test2.md"))).toBe(true);
+    expect(existsSync(join(installDir, ".opencode/commands/plugin-1--test1.md"))).toBe(false);
+    expect(existsSync(join(installDir, ".opencode/agents/plugin-2--test2.md"))).toBe(true);
 
     uninstallSpy.mockRestore();
     uninstallExitSpy.mockRestore();

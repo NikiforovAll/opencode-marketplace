@@ -96,9 +96,9 @@ export async function scan(path: string, options: ScanOptions): Promise<void> {
       console.log("No components found.");
       console.log();
       console.log("Expected directories:");
-      console.log("  - .opencode/command/, .claude/commands/, command/, or commands/");
-      console.log("  - .opencode/agent/, .claude/agents/, agent/, or agents/");
-      console.log("  - .opencode/skill/, .claude/skills/, skill/, or skills/");
+      console.log("  - .opencode/commands/, .claude/commands/, commands/, or command/");
+      console.log("  - .opencode/agents/, .claude/agents/, agents/, or agent/");
+      console.log("  - .opencode/skills/, .claude/skills/, skills/, or skill/");
       return;
     }
 

@@ -1,7 +1,8 @@
-import { afterAll, beforeAll, describe, expect, mock, test } from "bun:test";
+import { afterAll, afterEach, beforeAll, describe, expect, mock, test } from "bun:test";
 import { existsSync } from "node:fs";
 import { mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
+import { resetConfigCache } from "../src/config";
 import { ensureComponentDirsExist, getComponentDir, getComponentTargetPath } from "../src/paths";
 
 // Setup a temp directory for tests
@@ -17,6 +18,10 @@ describe("Paths", () => {
     await mkdir(testTmpDir, { recursive: true });
   });
 
+  afterEach(() => {
+    resetConfigCache();
+  });
+
   afterAll(async () => {
     await rm(testTmpDir, { recursive: true, force: true });
     // Also clean up potential .opencode in current dir if any were created
@@ -27,34 +32,38 @@ describe("Paths", () => {
   });
 
   describe("getComponentDir", () => {
-    test("should return user scope paths with trailing slash", () => {
+    test("should return user scope paths with trailing slash and plural dirs", () => {
       const cmdDir = getComponentDir("command", "user");
       expect(cmdDir).toContain(testTmpDir);
       expect(cmdDir).toContain(".config");
-      expect(cmdDir).toContain("command");
+      expect(cmdDir).toContain("commands");
       expect(cmdDir).toEndWith("/");
 
       const agentDir = getComponentDir("agent", "user");
-      expect(agentDir).toContain("agent");
+      expect(agentDir).toContain("agents");
       expect(agentDir).toEndWith("/");
-
-      const skillDir = getComponentDir("skill", "user");
-      expect(skillDir).toContain("skill");
-      expect(skillDir).toEndWith("/");
     });
 
-    test("should return project scope paths with trailing slash", () => {
+    test("should return user scope skill path under ~/.agents/skills/", () => {
+      const skillDir = getComponentDir("skill", "user");
+      expect(skillDir).toContain(".agents");
+      expect(skillDir).toContain("skills");
+      expect(skillDir).toEndWith("/");
+      expect(skillDir).not.toContain(".config");
+    });
+
+    test("should return project scope paths with trailing slash and plural dirs", () => {
       const cmdDir = getComponentDir("command", "project");
       expect(cmdDir).toContain(".opencode");
-      expect(cmdDir).toContain("command");
+      expect(cmdDir).toContain("commands");
       expect(cmdDir).toEndWith("/");
 
       const agentDir = getComponentDir("agent", "project");
-      expect(agentDir).toContain("agent");
+      expect(agentDir).toContain("agents");
       expect(agentDir).toEndWith("/");
 
       const skillDir = getComponentDir("skill", "project");
-      expect(skillDir).toContain("skill");
+      expect(skillDir).toContain("skills");
       expect(skillDir).toEndWith("/");
     });
   });
@@ -95,9 +104,9 @@ describe("Paths", () => {
     test("should create all component directories for user scope", async () => {
       await ensureComponentDirsExist("user");
 
-      const cmdDir = join(testTmpDir, ".config", "opencode", "command");
-      const agentDir = join(testTmpDir, ".config", "opencode", "agent");
-      const skillDir = join(testTmpDir, ".config", "opencode", "skill");
+      const cmdDir = join(testTmpDir, ".config", "opencode", "commands");
+      const agentDir = join(testTmpDir, ".config", "opencode", "agents");
+      const skillDir = join(testTmpDir, ".agents", "skills");
 
       expect(existsSync(cmdDir)).toBe(true);
       expect(existsSync(agentDir)).toBe(true);
@@ -107,9 +116,9 @@ describe("Paths", () => {
     test("should create all component directories for project scope", async () => {
       await ensureComponentDirsExist("project");
 
-      const cmdDir = join(process.cwd(), ".opencode", "command");
-      const agentDir = join(process.cwd(), ".opencode", "agent");
-      const skillDir = join(process.cwd(), ".opencode", "skill");
+      const cmdDir = join(process.cwd(), ".opencode", "commands");
+      const agentDir = join(process.cwd(), ".opencode", "agents");
+      const skillDir = join(process.cwd(), ".opencode", "skills");
 
       expect(existsSync(cmdDir)).toBe(true);
       expect(existsSync(agentDir)).toBe(true);
@@ -121,7 +130,7 @@ describe("Paths", () => {
       await ensureComponentDirsExist("user");
       // Should not throw
 
-      const cmdDir = join(testTmpDir, ".config", "opencode", "command");
+      const cmdDir = join(testTmpDir, ".config", "opencode", "commands");
       expect(existsSync(cmdDir)).toBe(true);
     });
   });

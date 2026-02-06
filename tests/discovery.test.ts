@@ -17,10 +17,10 @@ describe("Discovery", () => {
     await rm(tmpDir, { recursive: true, force: true });
   });
 
-  test("should discover commands from .opencode/command", async () => {
+  test("should discover commands from .opencode/commands", async () => {
     const root = join(tmpDir, "p1");
-    await mkdir(join(root, ".opencode/command"), { recursive: true });
-    await writeFile(join(root, ".opencode/command/cmd1.md"), "content");
+    await mkdir(join(root, ".opencode/commands"), { recursive: true });
+    await writeFile(join(root, ".opencode/commands/cmd1.md"), "content");
 
     const components = await discoverComponents(root, pluginName);
     const commands = components.filter((c) => c.type === "command");
@@ -44,10 +44,10 @@ describe("Discovery", () => {
 
   test("should prioritize .opencode over .claude", async () => {
     const root = join(tmpDir, "p3");
-    await mkdir(join(root, ".opencode/command"), { recursive: true });
+    await mkdir(join(root, ".opencode/commands"), { recursive: true });
     await mkdir(join(root, ".claude/commands"), { recursive: true });
 
-    await writeFile(join(root, ".opencode/command/primary.md"), "content");
+    await writeFile(join(root, ".opencode/commands/primary.md"), "content");
     await writeFile(join(root, ".claude/commands/secondary.md"), "content");
 
     const components = await discoverComponents(root, pluginName);
